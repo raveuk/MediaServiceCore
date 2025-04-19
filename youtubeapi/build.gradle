@@ -1,3 +1,5 @@
+import com.android.build.gradle.internal.tasks.CompileArtProfileTask
+
 apply from: '../SharedModules/constants.gradle'
 apply plugin: 'kotlin-android'
 apply plugin: 'com.android.library'
@@ -95,4 +97,8 @@ dependencies {
     // NewPipe pot
     implementation 'androidx.webkit:webkit:1.13.0' // Latest with Android 4.4 support
     implementation 'com.grack:nanojson:1.7'
+}
+
+tasks.withType(CompileArtProfileTask).configureEach {
+    enabled false
 }

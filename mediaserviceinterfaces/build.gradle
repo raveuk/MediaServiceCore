@@ -1,3 +1,5 @@
+import com.android.build.gradle.internal.tasks.CompileArtProfileTask
+
 apply from: '../SharedModules/constants.gradle'
 apply plugin: 'com.android.library'
 
@@ -38,4 +40,8 @@ dependencies {
     implementation 'io.reactivex.rxjava2:rxandroid:' + rxAndroidVersion
     implementation 'io.reactivex.rxjava2:rxjava:' + rxJavaVersion
     implementation 'androidx.annotation:annotation:' + annotationXLibraryVersion
+}
+
+tasks.withType(CompileArtProfileTask).configureEach {
+    enabled false
 }
