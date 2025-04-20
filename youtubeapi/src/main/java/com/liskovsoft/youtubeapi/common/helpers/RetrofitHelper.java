@@ -27,6 +27,7 @@ import com.liskovsoft.youtubeapi.common.models.gen.ErrorResponse;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.ConnectException;
+import java.util.Arrays;
 import java.util.List;
 
 import okhttp3.Headers;
@@ -176,6 +177,7 @@ public class RetrofitHelper {
 
     public static <T> T create(Class<T> clazz) {
         Annotation[] annotations = clazz.getAnnotations();
+        android.util.Log.d(TAG, "create: " + clazz.getName() + " annotations: " + annotations.length);
 
         for (Annotation annotation : annotations) {
             if (annotation instanceof WithRegExp) {
@@ -191,7 +193,7 @@ public class RetrofitHelper {
             }
         }
 
-        throw new IllegalStateException("RetrofitHelper: unknown class: " + clazz.getName());
+        throw new IllegalStateException("RetrofitHelper: unknown class: " + clazz.getName() + "Annotations: " + Arrays.toString(annotations));
     }
 
     private static <T> void handleResponseErrors(Response<T> response) {
