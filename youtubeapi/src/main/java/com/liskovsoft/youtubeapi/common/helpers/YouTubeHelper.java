@@ -66,7 +66,7 @@ public final class YouTubeHelper {
     /**
      * Additional video info such as user, published etc.
      */
-    public static @Nullable String createInfo(Object... items) {
+    public static @Nullable CharSequence createInfo(Object... items) {
         return ServiceHelper.createInfo(items);
     }
 
@@ -132,9 +132,10 @@ public final class YouTubeHelper {
 
         String title = mediaItem.getTitle().toLowerCase();
 
-        long lengthMs = mediaItem.getDurationMs();
-        boolean isShortLength = lengthMs > 0 && lengthMs <= SHORTS_LEN_MS;
-        return isShortLength || mediaItem.isShorts() || title.contains("#short") || title.contains("#shorts") || title.contains("#tiktok");
+        //long lengthMs = mediaItem.getDurationMs();
+        //boolean isShortLength = lengthMs > 0 && lengthMs <= SHORTS_LEN_MS;
+        //return isShortLength || mediaItem.isShorts() || title.contains("#short") || title.contains("#shorts") || title.contains("#tiktok");
+        return mediaItem.isShorts() || title.contains("#short") || title.contains("#shorts") || title.contains("#tiktok");
     }
 
     public static boolean isMix(MediaItem mediaItem) {

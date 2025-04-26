@@ -11,11 +11,13 @@ import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.sharedutils.prefs.GlobalPreferences;
 import com.liskovsoft.sharedutils.prefs.SharedPreferencesBase;
 import com.liskovsoft.sharedutils.rx.RxHelper;
+import com.liskovsoft.youtubeapi.app.PoTokenGate;
 import com.liskovsoft.youtubeapi.app.models.cached.AppInfoCached;
 import com.liskovsoft.youtubeapi.app.models.cached.ClientDataCached;
 import com.liskovsoft.youtubeapi.app.models.cached.PlayerDataCached;
 import com.liskovsoft.youtubeapi.app.playerdata.NSigData;
 import com.liskovsoft.youtubeapi.app.potokencloud.PoTokenResponse;
+import com.liskovsoft.youtubeapi.app.potokennp2.PoTokenProviderImpl;
 import com.liskovsoft.youtubeapi.service.YouTubeMediaItemService;
 
 import java.util.UUID;
@@ -63,6 +65,7 @@ public class MediaServiceData {
     private PlayerDataCached mPlayerData;
     private ClientDataCached mClientData;
     private NSigData mNSigData;
+    private NSigData mSigData;
     private boolean mIsMoreSubtitlesUnlocked;
     private boolean mIsPremiumFixEnabled;
 
@@ -158,6 +161,16 @@ public class MediaServiceData {
 
     public void setNSigData(NSigData nSigData) {
         mNSigData = nSigData;
+        persistData();
+    }
+
+    @Nullable
+    public NSigData getSigData() {
+        return mSigData;
+    }
+
+    public void setSigData(NSigData nSigData) {
+        mSigData = nSigData;
         persistData();
     }
 
@@ -275,6 +288,10 @@ public class MediaServiceData {
         return mIsPremiumFixEnabled;
     }
 
+    public boolean supportsWebView() {
+        return PoTokenGate.supportsNpPot() && !PoTokenProviderImpl.isBroken();
+    }
+
     private void restoreData() {
         String data = mGlobalPrefs.getMediaServiceData();
 
@@ -309,6 +326,7 @@ public class MediaServiceData {
         String[] split = Helpers.splitData(cache);
 
         mNSigData = Helpers.parseItem(split, 8, NSigData::fromString);
+        mSigData = Helpers.parseItem(split, 9, NSigData::fromString);
     }
 
     private void persistData() {
@@ -338,6 +356,6 @@ public class MediaServiceData {
 
         mCachedPrefs.setMediaServiceCache(
                 Helpers.mergeData(null, null,
-                        null, null, null, null, null, null, mNSigData));
+                        null, null, null, null, null, null, mNSigData, mSigData));
     }
 }

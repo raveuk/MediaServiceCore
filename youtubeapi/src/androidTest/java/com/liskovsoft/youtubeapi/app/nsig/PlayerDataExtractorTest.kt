@@ -32,16 +32,44 @@ class PlayerDataExtractorTest {
     }
 
     @Test
-    fun testPlayerVersions() {
-        AppConstants.playerUrls.forEach { testPlayerUrl(it) }
+    fun testNSigPlayerVersions() {
+        AppConstants.playerUrls.forEach { testNSigPlayerUrl(it) }
     }
 
-    private fun testPlayerUrl(url: String) {
+    @Test
+    fun testSomeNSigPlayerVersions() {
+        testNSigPlayerUrl("https://www.youtube.com/s/player/643afba4/tv-player-es6.vflset/tv-player-es6.js")
+        testNSigPlayerUrl("https://www.youtube.com/s/player/73381ccc/tv-player-es6.vflset/tv-player-es6.js")
+    }
+
+    @Test
+    fun testSigPlayerVersions() {
+        AppConstants.playerUrls.forEach { testSigPlayerUrl(it) }
+    }
+
+    @Test
+    fun testSomeSigPlayerVersions() {
+        testSigPlayerUrl("https://www.youtube.com/s/player/b12cc44b/tv-player-ias.vflset/tv-player-ias.js")
+        testSigPlayerUrl("https://www.youtube.com/s/player/69f581a5/tv-player-es6.vflset/tv-player-es6.js")
+        testSigPlayerUrl("https://www.youtube.com/s/player/73381ccc/tv-player-es6.vflset/tv-player-es6.js")
+        testSigPlayerUrl("https://www.youtube.com/s/player/6450230e/player_ias.vflset/en_US/base.js")
+    }
+
+    private fun testNSigPlayerUrl(url: String) {
         val extractor = PlayerDataExtractor(url)
 
         val nParam = "5cNpZqIJ7ixNqU68Y7S"
         val nSig = extractor.extractNSig(nParam)
         assertNotNull("NSig not null for url $url", nSig)
         assertNotEquals("NSig not equal failed for url $url", nParam, nSig)
+    }
+
+    private fun testSigPlayerUrl(url: String) {
+        val extractor = PlayerDataExtractor(url)
+
+        val sigParam = "5cNpZqIJ7ixNqU68Y7S"
+        val nSig = extractor.extractSig(sigParam)
+        assertNotNull("Sig not null for url $url", nSig)
+        assertNotEquals("Sig not equal failed for url $url", sigParam, nSig)
     }
 }
