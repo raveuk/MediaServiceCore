@@ -49,10 +49,16 @@ class PlayerDataExtractorTest {
 
     @Test
     fun testSomeSigPlayerVersions() {
+        testSigPlayerUrl("https://www.youtube.com/s/player/8102da6c/tv-player-es6.vflset/tv-player-es6.js")
         testSigPlayerUrl("https://www.youtube.com/s/player/b12cc44b/tv-player-ias.vflset/tv-player-ias.js")
         testSigPlayerUrl("https://www.youtube.com/s/player/69f581a5/tv-player-es6.vflset/tv-player-es6.js")
         testSigPlayerUrl("https://www.youtube.com/s/player/73381ccc/tv-player-es6.vflset/tv-player-es6.js")
         testSigPlayerUrl("https://www.youtube.com/s/player/6450230e/player_ias.vflset/en_US/base.js")
+    }
+
+    @Test
+    fun testCPNPlayerVersions() {
+        AppConstants.playerUrls.forEach { testCPNPlayerUrl(it) }
     }
 
     private fun testNSigPlayerUrl(url: String) {
@@ -71,5 +77,13 @@ class PlayerDataExtractorTest {
         val nSig = extractor.extractSig(sigParam)
         assertNotNull("Sig not null for url $url", nSig)
         assertNotEquals("Sig not equal failed for url $url", sigParam, nSig)
+    }
+
+    private fun testCPNPlayerUrl(url: String) {
+        // TODO: remove replace hack
+        val extractor = PlayerDataExtractor(url.replace("player_ias.vflset/en_US/base.js", "tv-player-es6.vflset/tv-player-es6.js"))
+
+        val cpn = extractor.createClientPlaybackNonce()
+        assertNotNull("CPN not null for url $url", cpn)
     }
 }
