@@ -42,6 +42,7 @@ public class YouTubeMediaItemMetadata implements MediaItemMetadata {
     private List<MediaGroup> mSuggestions;
     private boolean mIsLive;
     private boolean mIsUpcoming;
+    private PlaylistInfo mPlaylistInfo;
 
     public static YouTubeMediaItemMetadata from(WatchNextResult watchNextResult) {
         if (watchNextResult == null) {
@@ -166,9 +167,17 @@ public class YouTubeMediaItemMetadata implements MediaItemMetadata {
         return mTitle;
     }
 
+    public void setTitle(String title) {
+        mTitle = title;
+    }
+
     @Override
     public CharSequence getSecondTitle() {
         return mSecondTitle;
+    }
+
+    public void setSecondTitle(CharSequence secondTitle) {
+        mSecondTitle = secondTitle;
     }
 
     @Override
@@ -216,9 +225,17 @@ public class YouTubeMediaItemMetadata implements MediaItemMetadata {
         return mVideoId;
     }
 
+    public void setVideoId(String videoId) {
+        mVideoId = videoId;
+    }
+
     @Override
     public MediaItem getNextVideo() {
         return mNextVideo;
+    }
+
+    public void setNextVideo(MediaItem nextVideo) {
+        mNextVideo = nextVideo;
     }
 
     @Override
@@ -277,7 +294,11 @@ public class YouTubeMediaItemMetadata implements MediaItemMetadata {
 
     @Override
     public PlaylistInfo getPlaylistInfo() {
-        return null;
+        return mPlaylistInfo;
+    }
+
+    public void setPlaylistInfo(PlaylistInfo playlistInfo) {
+        mPlaylistInfo = playlistInfo;
     }
 
     @Override

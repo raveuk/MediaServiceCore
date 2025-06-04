@@ -4,6 +4,7 @@ internal object AppConstants {
     @JvmField
     val playerUrls = listOf(
         // NOTE: tv player should be in the top (ias ones may not validate correctly)
+        "https://www.youtube.com/s/player/59b252b9/tv-player-es6.vflset/tv-player-es6.js",
         "https://www.youtube.com/s/player/8102da6c/tv-player-es6.vflset/tv-player-es6.js",
         "https://www.youtube.com/s/player/8102da6c/player_ias.vflset/en_US/base.js",
         "https://www.youtube.com/s/player/22f02d3d/player_ias.vflset/en_US/base.js",
@@ -46,6 +47,8 @@ internal object AppConstants {
         "https://www.youtube.com/get_video_info?html5=1&c=TVHTML5&ps=default&eurl=https%3A%2F%2Fwww.youtube.com%2Ftv"
 
     const val WATCH_LATER_CHANNEL_ID = "VLWL"
+    const val LIKED_CHANNEL_ID = "VLLL"
+    const val FAVORITES_CHANNEL_ID = "VLFL" // NOTE: it's only the beginning part
     const val WATCH_LATER_PLAYLIST = "WL"
     const val LIKED_PLAYLIST = "LL"
 }
