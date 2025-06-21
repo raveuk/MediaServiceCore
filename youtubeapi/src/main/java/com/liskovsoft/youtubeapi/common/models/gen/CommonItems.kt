@@ -576,9 +576,15 @@ internal data class ServiceEndpoint(
         val serializedInteractionsRequest: String?
     )
     data class CommandExecutorCommand(
-        val commands: List<InnertubeCommand>?
+        // WARN: don't merge ExecutorCommand with InnertubeCommand: Android 4 StackOverflowError
+        // The node InnertubeCommand recursively reference itself
+        val commands: List<ExecutorCommand>?
     )
 }
+
+internal data class ExecutorCommand(
+    val feedbackEndpoint: FeedbackEndpoint?
+)
 
 internal data class FeedbackEndpoint(
     val feedbackToken: String?
