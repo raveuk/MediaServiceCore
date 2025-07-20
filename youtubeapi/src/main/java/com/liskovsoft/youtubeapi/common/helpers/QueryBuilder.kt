@@ -2,7 +2,10 @@ package com.liskovsoft.youtubeapi.common.helpers
 
 internal enum class PostDataType { Default, Player, Browse }
 
-internal class QueryBuilder(val client: AppClient) {
+// Use protobuf to bypass geo blocking
+private const val GEO_PARAMS: String = "CgIQBg%3D%3D"
+
+internal class QueryBuilder(private val client: AppClient) {
     private var type: PostDataType? = null
     private var acceptLanguage: String? = null
     private var acceptRegion: String? = null
@@ -13,7 +16,8 @@ internal class QueryBuilder(val client: AppClient) {
     private var clickTrackingParams: String? = null
     private var poToken: String? = null
     private var signatureTimestamp: Int? = null
-    private var isWebEmbedded: Boolean = false
+    private val isWebEmbedded: Boolean = client == AppClient.WEB_EMBED
+    private var isGeoFixEnabled: Boolean = false
 
     fun setType(type: PostDataType) = apply { this.type = type }
     fun setLanguage(lang: String?) = apply { acceptLanguage = lang }
@@ -25,22 +29,22 @@ internal class QueryBuilder(val client: AppClient) {
     fun setSignatureTimestamp(timestamp: Int?) = apply { signatureTimestamp = timestamp }
     fun setClickTrackingParams(params: String?) = apply { clickTrackingParams = params }
     fun setVisitorData(visitorData: String?) = apply { this.visitorData = visitorData }
-    fun setAsWebEmbedded(isWebEmbedded: Boolean) = apply { this.isWebEmbedded = isWebEmbedded }
+    fun enableGeoFix(enableGeoFix: Boolean) = apply { isGeoFixEnabled = enableGeoFix }
 
     fun build(): String {
         val json = """
              {
                 "context": {
                      ${createClientChunk()}
-                     ${createClickTrackingChunk() ?: ""}
+                     ${createClickTrackingChunk()}
                      ${createUserChunk()}
-                     ${createWebEmbeddedChunk() ?: ""}
+                     ${createWebEmbeddedChunk()}
                 },
                 "racyCheckOk": true,
                 "contentCheckOk": true,
-                ${createCheckParamsChunk() ?: ""}
-                ${createPotChunk() ?: ""}
-                ${createVideoIdChunk() ?: ""}
+                ${createCheckParamsChunk()}
+                ${createPotChunk()}
+                ${createVideoIdChunk()}
              }
         """
 
@@ -58,54 +62,48 @@ internal class QueryBuilder(val client: AppClient) {
             "clientVersion": "${client.clientVersion}",
             "clientScreen": "${client.clientScreen}",
             "userAgent": "${client.userAgent}",
+            "browserName": "${client.browserName}",
+            "browserVersion": "${client.browserVersion}",
         """
-        val postVars = client.postData
+        val postVars = client.postData ?: ""
         val browseVars = if (requireNotNull(type) == PostDataType.Browse)
-            """
-                "tvAppInfo": { 
-                    "appQuality": "TV_APP_QUALITY_FULL_ANIMATION",
-                    "zylonLeftNav": true
-                },
-                "browserName": "Cobalt",
-                "webpSupport": false,
-                "animatedWebpSupport": true,
-            """ // Include Shorts: "browserName":"Cobalt"
-            else null
+                client.postDataBrowse ?: ""
+            else ""
         val regionVars = """
             "acceptLanguage": "${requireNotNull(acceptLanguage)}",
             "acceptRegion": "${requireNotNull(acceptRegion)}",
             "utcOffsetMinutes": "${requireNotNull(utcOffsetMinutes)}",
         """
-        val visitorVar = visitorData?.let { """ "visitorData": "$visitorData" """ }
+        val visitorVar = visitorData?.let { """ "visitorData": "$visitorData" """ } ?: ""
         return """
              "client": {
                 $clientVars
-                ${postVars ?: ""}
-                ${browseVars ?: ""}
+                $postVars
+                $browseVars
                 $regionVars
-                ${visitorVar ?: ""}
+                $visitorVar
              },
         """
     }
 
-    private fun createClickTrackingChunk(): String? {
+    private fun createClickTrackingChunk(): String {
         return clickTrackingParams?.let {
             """
                 "clickTracking": {
                     "clickTrackingParams": "$it"
                 },
             """
-        }
+        } ?: ""
     }
 
-    private fun createWebEmbeddedChunk(): String? {
+    private fun createWebEmbeddedChunk(): String {
         return if (isWebEmbedded)
             """
                 "thirdParty": {
                     "embedUrl": "https://www.youtube.com/embed/${requireNotNull(videoId)}"
                 },
             """
-           else null
+           else ""
     }
 
     private fun createUserChunk(): String {
@@ -117,27 +115,55 @@ internal class QueryBuilder(val client: AppClient) {
         """
     }
 
-    private fun createPotChunk(): String? {
+    private fun createPotChunk(): String {
         return poToken?.let {
             """
                "serviceIntegrityDimensions": {
                     "poToken": "$it"
                }, 
             """
-        }
+        } ?: ""
     }
 
-    private fun createVideoIdChunk(): String? {
+    private fun createVideoIdChunk(): String {
         return videoId?.let {
             """
                 "videoId": "$it",
-                "cpn": "${requireNotNull(cpn)}",
+                ${createCPNChunk()}
+                ${createParamsChunk()}
             """
-        }
+        } ?: ""
     }
 
-    private fun createCheckParamsChunk(): String? {
-        // For isInlinePlaybackNoAd see https://iter.ca/post/yt-adblock/
+    private fun createCPNChunk(): String {
+        return cpn?.let {
+            """
+                "cpn": "$it",
+            """
+        } ?: ""
+    }
+
+    private fun createParamsChunk(): String {
+        val params = if (isGeoFixEnabled) GEO_PARAMS else client.params
+        return params?.let {
+            """
+                "params": "$it",
+            """
+        } ?: ""
+    }
+
+    private fun createCheckParamsChunk(): String {
+        // adPlaybackContext https://github.com/yt-dlp/yt-dlp/commit/ff6f94041aeee19c5559e1c1cd693960a1c1dd14
+        // isInlinePlaybackNoAd https://iter.ca/post/yt-adblock/
+        //     "playbackContext": {
+        //        "adPlaybackContext": {
+        //            "pyv": true,
+        //            "adType": "AD_TYPE_INSTREAM"
+        //        },
+        //        "contentPlaybackContext": {
+        //            "isInlinePlaybackNoAd": true,
+        //        }
+        //    },
         return signatureTimestamp?.let {
             """
                 "playbackContext": {
@@ -149,6 +175,6 @@ internal class QueryBuilder(val client: AppClient) {
                     }
                 },
             """
-        }
+        } ?: ""
     }
 }
