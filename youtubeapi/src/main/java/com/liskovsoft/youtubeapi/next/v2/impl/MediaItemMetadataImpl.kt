@@ -4,12 +4,12 @@ import com.liskovsoft.mediaserviceinterfaces.data.*
 import com.liskovsoft.mediaserviceinterfaces.data.ChapterItem
 import com.liskovsoft.mediaserviceinterfaces.data.NotificationState
 import com.liskovsoft.mediaserviceinterfaces.data.PlaylistInfo
-import com.liskovsoft.youtubeapi.common.helpers.ServiceHelper
+import com.liskovsoft.googlecommon.common.helpers.ServiceHelper
 import com.liskovsoft.youtubeapi.common.models.gen.*
 import com.liskovsoft.youtubeapi.next.v2.gen.WatchNextResult
 import com.liskovsoft.youtubeapi.common.models.impl.mediagroup.SuggestionsGroup
 import com.liskovsoft.youtubeapi.common.models.impl.mediaitem.NextMediaItem
-import com.liskovsoft.youtubeapi.common.helpers.YouTubeHelper
+import com.liskovsoft.googlecommon.common.helpers.YouTubeHelper
 import com.liskovsoft.youtubeapi.common.models.impl.mediaitem.ShuffleMediaItem
 import com.liskovsoft.youtubeapi.next.v2.gen.*
 import com.liskovsoft.youtubeapi.notifications.NotificationStateImplWrapper
@@ -106,22 +106,19 @@ internal data class MediaItemMetadataImpl(val watchNextResult: WatchNextResult,
     private val subscriberCountItem by lazy { videoOwner?.getSubscriberCount() }
     private val videoAuthorImageUrl by lazy { (videoOwner?.getThumbnails() ?: channelOwner?.getThumbnails())?.getOptimalResThumbnailUrl() }
     private val suggestionList by lazy {
+        // NOTE: the result also contains unnamed sections (new suggestions type)
         val list = suggestedSections
-                ?.filter { it.getTitle()?.trim() != "" && it.getItemWrappers() != null } // remove unnamed sections (new suggestions type)
-                ?.mapIndexed { idx, it -> SuggestionsGroup(it).apply {
-            // Replace "Up Next" with real playlist name
-            if (idx == 0 && playlistInfo?.title != null) {
-                title = playlistInfo?.title
-            }
-        }}
-        // Merge unnamed section together
-        val groups = suggestedSections?.filter { it.getTitle()?.trim() == ""  }
-        var mergedSection: SuggestionsGroup? = null
-        if (groups?.isNotEmpty() == true) {
-            mergedSection = SuggestionsGroup(groups)
-        }
-        if (list?.isNotEmpty() == true || mergedSection != null)
-            listOfNotNull(list, listOfNotNull(mergedSection)).flatten()
+            ?.filter { it.getItemWrappers() != null }
+            ?.mapIndexed { idx, it -> SuggestionsGroup(it).apply {
+                // Replace "Up Next" with real playlist name
+                if (idx == 0 && playlistInfo?.title != null) {
+                    title = playlistInfo?.title
+                }
+                // Unnamed sections have space in names " ". Remove spaces to improve further parsing
+                title = title?.trim()
+            }}
+        if (list?.isNotEmpty() == true)
+            list
         else
             // In rare cases first chip item contains all shelfs
             suggestedSections?.firstOrNull()?.getChipItems()?.firstOrNull()?.run {

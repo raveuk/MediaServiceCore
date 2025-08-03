@@ -4,19 +4,19 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.liskovsoft.mediaserviceinterfaces.SignInService.OnAccountChange;
-import com.liskovsoft.mediaserviceinterfaces.data.Account;
+import com.liskovsoft.mediaserviceinterfaces.oauth.Account;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.misc.WeakHashSet;
 import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.sharedutils.prefs.GlobalPreferences;
 import com.liskovsoft.youtubeapi.app.AppService;
 import com.liskovsoft.youtubeapi.auth.V2.AuthService;
-import com.liskovsoft.youtubeapi.auth.models.auth.RefreshToken;
-import com.liskovsoft.youtubeapi.auth.models.auth.UserCode;
-import com.liskovsoft.youtubeapi.auth.models.info.AccountInt;
+import com.liskovsoft.googlecommon.common.models.auth.RefreshToken;
+import com.liskovsoft.googlecommon.common.models.auth.UserCode;
+import com.liskovsoft.googlecommon.common.models.auth.info.AccountInt;
 import com.liskovsoft.sharedutils.rx.RxHelper;
 import com.liskovsoft.youtubeapi.service.YouTubeSignInService;
-import com.liskovsoft.youtubeapi.service.data.YouTubeAccount;
+import com.liskovsoft.googlecommon.service.oauth.YouTubeAccount;
 import com.liskovsoft.youtubeapi.videoinfo.V2.VideoInfoService;
 
 import io.reactivex.Observable;
@@ -34,32 +34,6 @@ public class YouTubeAccountManager {
      * Fix ConcurrentModificationException when using {@link #getSelectedAccount()}
      */
     private final List<Account> mAccounts = new CopyOnWriteArrayList<Account>() {
-        //@Override
-        //public boolean add(Account account) {
-        //    if (account == null) {
-        //        return false;
-        //    }
-        //
-        //    merge(account);
-        //
-        //    // Don't remove these lines or you won't be able to enter to the account.
-        //    while (contains(account)) {
-        //        remove(account);
-        //    }
-        //
-        //    return super.add(account);
-        //}
-        //
-        //private void merge(Account account) {
-        //    int index = indexOf(account);
-        //
-        //    if (index != -1) {
-        //        Account matched = get(index);
-        //        ((YouTubeAccount) account).merge(matched);
-        //        remove(matched);
-        //    }
-        //}
-
         @Override
         public boolean add(Account account) {
             if (account == null) {
@@ -82,6 +56,7 @@ public class YouTubeAccountManager {
                     remove(account);
                 }
 
+                // Do merge after the remove not before!!!
                 ((YouTubeAccount) account).merge(matched);
             }
         }
@@ -140,12 +115,11 @@ public class YouTubeAccountManager {
         YouTubeAccount tempAccount = YouTubeAccount.fromToken(refreshToken);
         addAccount(tempAccount);
 
-        // Use initial account to create auth header
+        // Use initial account to create auth header and fetch the accounts below
         mSignInService.invalidateCache();
         mSignInService.checkAuth();
 
         // Remove initial account (with only refresh key)
-        //removeAccount(tempAccount);
         mAccounts.remove(tempAccount); // multi thread fix
 
         List<AccountInt> accountsInt = getAuthService().getAccounts(); // runs under auth header from above
@@ -165,8 +139,6 @@ public class YouTubeAccountManager {
 
         persistAccounts();
         onAccountChanged();
-
-        Log.d(TAG, "Success. Refresh token stored successfully in registry: " + refreshToken);
     }
 
     private void addAccount(Account newAccount) {

@@ -2,9 +2,9 @@ package com.liskovsoft.youtubeapi.common.models.impl.mediaitem
 
 import com.liskovsoft.sharedutils.helpers.Helpers
 import com.liskovsoft.youtubeapi.browse.v2.gen.*
-import com.liskovsoft.youtubeapi.common.helpers.ServiceHelper
+import com.liskovsoft.googlecommon.common.helpers.ServiceHelper
 import com.liskovsoft.youtubeapi.common.models.gen.*
-import com.liskovsoft.youtubeapi.common.helpers.YouTubeHelper
+import com.liskovsoft.googlecommon.common.helpers.YouTubeHelper
 import com.liskovsoft.youtubeapi.next.v2.gen.*
 import com.liskovsoft.youtubeapi.notifications.gen.*
 
@@ -13,7 +13,7 @@ internal class WrapperMediaItem(private val itemWrapper: ItemWrapper): BaseMedia
     override val videoIdItem by lazy { itemWrapper.getVideoId() }
     override val titleItem by lazy { itemWrapper.getTitle() }
     override val secondTitleItem by lazy {
-        YouTubeHelper.createInfo(if (isLiveItem == true && !Helpers.allNulls(userName, viewCountText, publishedTime, upcomingEventText)) null else
+        YouTubeHelper.createInfo(if (isLiveItem && !Helpers.allNulls(userName, viewCountText, publishedTime, upcomingEventText)) null else
             subTitle, userName, viewCountText, publishedTime, upcomingEventText)
     }
     override val subTitle by lazy { itemWrapper.getSubTitle() } // quality tag (e.g. 4K, LIVE) or full second title
@@ -38,6 +38,7 @@ internal class WrapperMediaItem(private val itemWrapper: ItemWrapper): BaseMedia
     override val mediaUrl by lazy { ServiceHelper.videoIdToFullUrl(videoIdItem) ?: null }
     override val percentWatchedItem by lazy { itemWrapper.getPercentWatched() }
     override val startTimeSecondsItem by lazy { itemWrapper.getStartTimeSeconds() }
+    override val searchQueryItem by lazy { itemWrapper.getQuery() }
     //override val playlistParamsItem by lazy { itemWrapper.getParams() }
     val descriptionText by lazy { itemWrapper.getDescriptionText() }
 }

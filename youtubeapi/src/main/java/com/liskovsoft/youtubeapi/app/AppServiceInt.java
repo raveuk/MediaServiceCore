@@ -4,8 +4,8 @@ import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.youtubeapi.app.models.AppInfo;
 import com.liskovsoft.youtubeapi.app.models.ClientData;
 import com.liskovsoft.youtubeapi.app.playerdata.PlayerDataExtractor;
-import com.liskovsoft.youtubeapi.common.helpers.DefaultHeaders;
-import com.liskovsoft.youtubeapi.common.helpers.RetrofitHelper;
+import com.liskovsoft.googlecommon.common.helpers.DefaultHeaders;
+import com.liskovsoft.googlecommon.common.helpers.RetrofitHelper;
 import com.liskovsoft.youtubeapi.service.internal.MediaServiceData;
 
 import retrofit2.Call;
@@ -30,9 +30,10 @@ public class AppServiceInt {
         Response<AppInfo> response = RetrofitHelper.getResponse(wrapper);
 
         if (response != null) {
-            String visitorInfoCookie = RetrofitHelper.getCookie(response, AppConstants.VISITOR_INFO_COOKIE);
-            String visitorPrivacyCookie = RetrofitHelper.getCookie(response, AppConstants.VISITOR_PRIVACY_COOKIE);
-            getData().setVisitorCookie(Helpers.join("; ", visitorInfoCookie, visitorPrivacyCookie));
+            //String visitorInfoCookie = RetrofitHelper.getCookie(response, AppConstants.VISITOR_INFO_COOKIE);
+            //String visitorPrivacyCookie = RetrofitHelper.getCookie(response, AppConstants.VISITOR_PRIVACY_COOKIE);
+            //getData().setVisitorCookie(Helpers.join("; ", visitorInfoCookie, visitorPrivacyCookie));
+            getData().setVisitorCookie(RetrofitHelper.getCookies(response));
             result = response.body();
         }
 

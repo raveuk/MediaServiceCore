@@ -13,7 +13,7 @@ import com.liskovsoft.youtubeapi.next.v1.result.WatchNextResultContinuation;
 import com.liskovsoft.youtubeapi.search.models.SearchResult;
 import com.liskovsoft.youtubeapi.search.models.SearchResultContinuation;
 import com.liskovsoft.youtubeapi.search.models.SearchSection;
-import com.liskovsoft.youtubeapi.common.helpers.YouTubeHelper;
+import com.liskovsoft.googlecommon.common.helpers.YouTubeHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -265,9 +265,7 @@ public class YouTubeMediaGroup implements MediaGroup {
 
                 YouTubeMediaItem item = YouTubeMediaItem.from(tab, baseGroup.getType());
 
-                if (!YouTubeHelper.isEmpty(item)) {
-                    mediaItems.add(item);
-                }
+                mediaItems.add(item);
             }
         }
 
@@ -284,7 +282,7 @@ public class YouTubeMediaGroup implements MediaGroup {
             for (int i = 0; i < items.size(); i++) {
                 ItemWrapper item = items.get(i);
                 YouTubeMediaItem mediaItem = YouTubeMediaItem.from(item, i);
-                if (!YouTubeHelper.isEmpty(mediaItem)) {
+                if (mediaItem != null) {
                     mediaItem.setParams(baseGroup.mParams);
                     mediaItems.add(mediaItem);
                 }

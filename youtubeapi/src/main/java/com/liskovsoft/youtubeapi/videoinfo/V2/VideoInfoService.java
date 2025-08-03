@@ -10,7 +10,7 @@ import com.liskovsoft.sharedutils.prefs.GlobalPreferences;
 import com.liskovsoft.youtubeapi.app.AppService;
 import com.liskovsoft.youtubeapi.app.PoTokenGate;
 import com.liskovsoft.youtubeapi.common.helpers.AppClient;
-import com.liskovsoft.youtubeapi.common.helpers.RetrofitHelper;
+import com.liskovsoft.googlecommon.common.helpers.RetrofitHelper;
 import com.liskovsoft.youtubeapi.service.internal.MediaServiceData;
 import com.liskovsoft.youtubeapi.videoinfo.InitialResponse;
 import com.liskovsoft.youtubeapi.videoinfo.VideoInfoServiceBase;
@@ -124,14 +124,17 @@ public class VideoInfoService extends VideoInfoServiceBase {
     }
 
     public void switchNextFormat() {
+        // First, try to reset pot cache
         if (!mIsUnplayable && isPotSupported() && PoTokenGate.resetCache()) {
             return;
         }
+        // Then, try to disable Premium
         if (getData().isFormatEnabled(MediaServiceData.FORMATS_EXTENDED_HLS)) {
             // Skip additional formats fetching that could produce an error
             getData().enableFormat(MediaServiceData.FORMATS_EXTENDED_HLS, false);
             return;
         }
+        // And last, try to switch the client
         nextVideoInfo();
         persistVideoInfoType();
     }
@@ -230,7 +233,7 @@ public class VideoInfoService extends VideoInfoServiceBase {
                 mSkipAuthBlock = true;
                 VideoInfo webInfo = null;
                 try {
-                    webInfo = getVideoInfo(AppClient.WEB_EMBED, videoId, clickTrackingParams);
+                    webInfo = getVideoInfo(AppClient.WEB, videoId, clickTrackingParams);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

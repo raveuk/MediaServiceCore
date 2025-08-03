@@ -3,8 +3,8 @@ package com.liskovsoft.youtubeapi.common.models.impl.mediaitem
 import com.liskovsoft.mediaserviceinterfaces.data.MediaItem
 import com.liskovsoft.mediaserviceinterfaces.data.MediaItemMetadata
 import com.liskovsoft.sharedutils.helpers.Helpers
-import com.liskovsoft.youtubeapi.common.helpers.ServiceHelper
-import com.liskovsoft.youtubeapi.common.helpers.YouTubeHelper
+import com.liskovsoft.googlecommon.common.helpers.ServiceHelper
+import com.liskovsoft.googlecommon.common.helpers.YouTubeHelper
 import kotlin.math.abs
 
 open class BaseMediaItem : MediaItem {
@@ -34,7 +34,7 @@ open class BaseMediaItem : MediaItem {
     // TODO: time conversion doesn't take into account locale specific delimiters
     private val durationMsItem by lazy { ServiceHelper.timeTextToMillis(lengthText ?: badgeTextItem) }
 
-    protected open val reloadPageKeyItem: String? = null // TODO: override in the subclasses
+    protected open val reloadPageKeyItem: String? = null
     protected open val badgeTextItem: String? = null
     protected open val typeItem: Int = MediaItem.TYPE_VIDEO
     protected open val videoIdItem: String? = null
@@ -64,6 +64,7 @@ open class BaseMediaItem : MediaItem {
     protected open val startTimeSecondsItem: Int? = null
     protected open val hasNewContentItem: Boolean? = null
     protected open val hasUploadsItem: Boolean? = null
+    protected open val searchQueryItem: String? = null
 
     protected companion object {
         //var sId: Int = 0
@@ -120,7 +121,7 @@ open class BaseMediaItem : MediaItem {
     }
 
     override fun getPublishedDate(): Long {
-        return 0
+        return -1
     }
 
     override fun getCardImageUrl(): String? {
@@ -233,6 +234,10 @@ open class BaseMediaItem : MediaItem {
 
     override fun getClickTrackingParams(): String? {
         return null
+    }
+
+    override fun getSearchQuery(): String? {
+        return searchQueryItem
     }
 
     // Fake params

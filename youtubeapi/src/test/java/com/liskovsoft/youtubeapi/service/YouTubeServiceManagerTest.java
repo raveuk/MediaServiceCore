@@ -3,8 +3,8 @@ package com.liskovsoft.youtubeapi.service;
 import com.liskovsoft.mediaserviceinterfaces.ServiceManager;
 import com.liskovsoft.mediaserviceinterfaces.data.MediaGroup;
 import com.liskovsoft.mediaserviceinterfaces.data.MediaItem;
-import com.liskovsoft.youtubeapi.common.helpers.RetrofitOkHttpHelper;
-import com.liskovsoft.youtubeapi.common.helpers.tests.TestHelpers;
+import com.liskovsoft.googlecommon.common.helpers.RetrofitOkHttpHelper;
+import com.liskovsoft.googlecommon.common.helpers.tests.TestHelpers;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -36,11 +36,11 @@ public class YouTubeServiceManagerTest {
      */
     @Test
     public void testThatSearchNotEmpty() {
-        MediaGroup mediaGroup = mService.getContentService().getSearch("hello world");
+        List<MediaGroup> mediaGroup = mService.getContentService().getSearch("hello world");
 
         List<MediaItem> list = new ArrayList<>();
 
-        MediaItem mediaItem = mediaGroup.getMediaItems().get(0);
+        MediaItem mediaItem = mediaGroup.get(0).getMediaItems().get(0);
         list.add(mediaItem);
         assertNotNull(mediaItem);
 

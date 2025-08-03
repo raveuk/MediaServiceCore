@@ -5,8 +5,8 @@ import com.liskovsoft.mediaserviceinterfaces.data.MediaItem
 import com.liskovsoft.sharedutils.helpers.Helpers
 import com.liskovsoft.youtubeapi.browse.v2.BrowseService2
 import com.liskovsoft.youtubeapi.browse.v2.BrowseService2Wrapper
-import com.liskovsoft.youtubeapi.common.api.FileApi
-import com.liskovsoft.youtubeapi.common.helpers.RetrofitHelper
+import com.liskovsoft.googlecommon.common.api.FileApi
+import com.liskovsoft.googlecommon.common.helpers.RetrofitHelper
 import com.liskovsoft.youtubeapi.service.data.YouTubeMediaGroup
 import com.liskovsoft.youtubeapi.service.data.YouTubeMediaItem
 import kotlinx.coroutines.Dispatchers
@@ -20,11 +20,12 @@ import java.util.concurrent.CopyOnWriteArrayList
 internal object RssService {
     private val mFileApi = RetrofitHelper.create(FileApi::class.java)
     private const val RSS_URL: String = "https://www.youtube.com/feeds/videos.xml?channel_id="
+    private const val MAX_ITEMS = 100 // NOTE: Limit the result. Unlimited has veeery long loading and often crashing.
 
     @JvmStatic
     @JvmOverloads
     fun getFeed(vararg channelIds: String, type: Int = -1): MediaGroup? {
-        val items = fetchFeedsSafe(*channelIds) ?: return null
+        val items = fetchFeedsSafe(channelIds.take(MAX_ITEMS)) ?: return null
 
         items.sortByDescending { it.publishedDate }
 
@@ -33,9 +34,9 @@ internal object RssService {
         }
     }
 
-    private fun fetchFeedsSafe(vararg channelIds: String): MutableList<MediaItem>? {
+    private fun fetchFeedsSafe(channelIds: List<String>): MutableList<MediaItem>? {
         try {
-            return fetchFeeds(*channelIds)
+            return fetchFeeds(channelIds)
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
@@ -43,7 +44,7 @@ internal object RssService {
         return null
     }
 
-    private fun fetchFeeds(vararg channelIds: String): MutableList<MediaItem> = runBlocking {
+    private fun fetchFeeds(channelIds: List<String>): MutableList<MediaItem> = runBlocking {
         val items = CopyOnWriteArrayList<MediaItem>()
 
         coroutineScope { // wait for all child coroutines complete

@@ -1,5 +1,7 @@
 package com.liskovsoft.youtubeapi.common.helpers
 
+import com.liskovsoft.googlecommon.common.helpers.DefaultHeaders
+
 private const val JSON_POST_DATA_BASE = "{\"context\":{\"client\":{\"clientName\":\"%s\",\"clientVersion\":\"%s\"," +
         "\"clientScreen\":\"%s\",\"userAgent\":\"%s\",\"browserName\":\"%s\",\"browserVersion\":\"%s\",%s\"acceptLanguage\":\"%%s\",\"acceptRegion\":\"%%s\"," +
         "\"utcOffsetMinutes\":\"%%s\",\"visitorData\":\"%%s\"},%%s\"user\":{\"enableSafetyMode\":false,\"lockedSafetyMode\":false}}," +
@@ -65,7 +67,7 @@ internal enum class AppClient(
     val browserVersion by lazy { browserInfo.second }
     val browseTemplate by lazy { String.format(JSON_POST_DATA_BASE, clientName, clientVersion, clientScreen, userAgent,
         browserName, browserVersion, (postData ?: "") + (postDataBrowse ?: "")) }
-    val playerTemplate by lazy { String.format(JSON_POST_DATA_BASE, clientName, clientVersion, clientScreen, userAgent,
+    val baseTemplate by lazy { String.format(JSON_POST_DATA_BASE, clientName, clientVersion, clientScreen, userAgent,
         browserName, browserVersion, (postData ?: "")) }
 
     fun isAuthSupported() = this == TV || this == TV_EMBED // NOTE: TV_SIMPLE doesn't support auth
