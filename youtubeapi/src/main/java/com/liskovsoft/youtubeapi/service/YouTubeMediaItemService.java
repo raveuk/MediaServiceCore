@@ -67,8 +67,12 @@ public class YouTubeMediaItemService implements MediaItemService {
 
     @Override
     public YouTubeMediaItemFormatInfo getFormatInfo(String videoId, String clickTrackingParams) {
-        if (isCacheActual(videoId)) {
-            return mCachedFormatInfo;
+        YouTubeMediaItemFormatInfo cachedFormatInfo = getCachedFormatInfo(videoId);
+
+        if (cachedFormatInfo != null) {
+            // Improve the performance by fetching the hitory data on the second run
+            syncWithAuthFormatIfNeeded(cachedFormatInfo);
+            return cachedFormatInfo;
         }
 
         checkSigned();
@@ -77,7 +81,7 @@ public class YouTubeMediaItemService implements MediaItemService {
 
         YouTubeMediaItemFormatInfo formatInfo = YouTubeMediaItemFormatInfo.from(videoInfo);
 
-        saveInCache(formatInfo);
+        setCachedFormatInfo(formatInfo, clickTrackingParams);
 
         return formatInfo;
     }
@@ -488,15 +492,19 @@ public class YouTubeMediaItemService implements MediaItemService {
         mCachedFormatInfo = null;
     }
 
-    private boolean isCacheActual(String videoId) {
+    private YouTubeMediaItemFormatInfo getCachedFormatInfo(String videoId) {
         return  mCachedFormatInfo != null &&
                 mCachedFormatInfo.getVideoId() != null &&
                 mCachedFormatInfo.getVideoId().equals(videoId) &&
-                mCachedFormatInfo.isCacheActual();
+                mCachedFormatInfo.isCacheActual() ? mCachedFormatInfo : null;
     }
 
-    private void saveInCache(YouTubeMediaItemFormatInfo formatInfo) {
+    private void setCachedFormatInfo(YouTubeMediaItemFormatInfo formatInfo, String clickTrackingParams) {
         mCachedFormatInfo = formatInfo;
+
+        if (formatInfo != null) {
+            formatInfo.setClickTrackingParams(clickTrackingParams);
+        }
     }
 
     private void checkSigned() {
@@ -541,5 +549,16 @@ public class YouTubeMediaItemService implements MediaItemService {
     @NonNull
     private static WatchNextService getWatchNextService() {
         return WatchNextServiceWrapper.INSTANCE;
+    }
+
+    private static void syncWithAuthFormatIfNeeded(YouTubeMediaItemFormatInfo formatInfo) {
+        if (formatInfo == null) {
+            return;
+        }
+
+        if (formatInfo.isAnonymous() && !formatInfo.isUnplayable() && getSignInService().isSigned()) {
+            VideoInfo videoInfo = getVideoInfoService().getAuthVideoInfo(formatInfo.getVideoId(), formatInfo.getClickTrackingParams());
+            formatInfo.sync(YouTubeMediaItemFormatInfo.from(videoInfo));
+        }
     }
 }

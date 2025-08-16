@@ -5,13 +5,11 @@ import android.text.TextUtils;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
-import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.prefs.GlobalPreferences;
 import com.liskovsoft.youtubeapi.app.playerdata.PlayerDataExtractor;
-import com.liskovsoft.youtubeapi.service.internal.MediaServiceData;
+import com.liskovsoft.youtubeapi.common.helpers.AppConstants;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -49,7 +47,7 @@ public class AppServiceTest {
         ciphered.add(cipher);
         ciphered.add(cipher);
 
-        List<String> deciphered = mAppService.decipher(ciphered);
+        List<String> deciphered = mAppService.extractSig(ciphered);
 
         assertNotNull("Deciphered not null", deciphered);
         assertFalse("Deciphered not empty", deciphered.isEmpty());
@@ -69,7 +67,7 @@ public class AppServiceTest {
 
         PlayerDataExtractor extractor = new PlayerDataExtractor(AppConstants.playerUrls.get(0));
 
-        List<String> deciphered = extractor.decipherItems(ciphered);
+        List<String> deciphered = extractor.extractSig(ciphered);
 
         assertNotNull("Deciphered not null", deciphered);
         assertFalse("Deciphered not empty", deciphered.isEmpty());
@@ -103,7 +101,7 @@ public class AppServiceTest {
         throttled.add(throttleSignature);
         throttled.add(throttleSignature);
         throttled.add(throttleSignature);
-        List<String> normalized = mAppService.fixThrottling(throttled);
+        List<String> normalized = mAppService.extractNSig(throttled);
 
         assertNotNull("Normalized not null", normalized);
         assertFalse("Normalized not empty", normalized.isEmpty());

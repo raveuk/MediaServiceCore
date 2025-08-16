@@ -91,6 +91,9 @@ public class VideoInfo {
     @JsonPath("$.paidContentOverlay.paidContentOverlayRenderer.text")
     private TextItem mPaidContentText;
 
+    @JsonPath("$.streamingData.serverAbrStreamingUrl")
+    private String mServerAbrStreamingUrl; // SABR format url
+
     // Values used in tracking actions
     private String mEventId;
     private String mVisitorMonitoringData;
@@ -101,22 +104,14 @@ public class VideoInfo {
     private int mSegmentDurationUs;
     private boolean mIsStreamSeekable;
     private List<CaptionTrack> mMergedCaptionTracks;
-    private boolean mIsHistoryBroken;
+    private boolean mIsAnonymous;
 
     public List<AdaptiveVideoFormat> getAdaptiveFormats() {
         return mAdaptiveFormats;
     }
 
-    public void setAdaptiveFormats(List<AdaptiveVideoFormat> formats) {
-        mAdaptiveFormats = formats;
-    }
-
     public List<RegularVideoFormat> getRegularFormats() {
         return mRegularFormats;
-    }
-
-    public void setRegularFormats(List<RegularVideoFormat> formats) {
-        mRegularFormats = formats;
     }
 
     public List<AdaptiveVideoFormat> getRestrictedFormats() {
@@ -173,37 +168,16 @@ public class VideoInfo {
         return mEventId;
     }
 
-    /**
-     * Intended to merge signed and unsigned infos (no-playback fix)
-     */
-    public void setEventId(String eventId) {
-        mEventId = eventId;
-    }
-
     public String getVisitorMonitoringData() {
         parseTrackingParams();
 
         return mVisitorMonitoringData;
     }
 
-    /**
-     * Intended to merge signed and unsigned infos (no-playback fix)
-     */
-    public void setVisitorMonitoringData(String visitorMonitoringData) {
-        mVisitorMonitoringData = visitorMonitoringData;
-    }
-
     public String getOfParam() {
         parseTrackingParams();
 
         return mOfParam;
-    }
-
-    /**
-     * Intended to merge signed and unsigned infos (no-playback fix)
-     */
-    public void setOfParam(String ofParam) {
-        mOfParam = ofParam;
     }
 
     public String getPlaybackUrl() {
@@ -219,7 +193,7 @@ public class VideoInfo {
     }
 
     public boolean isUnplayable() {
-        return isUnknownRestricted() || isVisibilityRestricted() || isAgeRestricted();
+        return isUnknownRestricted() || isVisibilityRestricted() || isAgeRestricted() || isEmpty();
     }
 
     /**
@@ -366,14 +340,9 @@ public class VideoInfo {
         return mPaidContentText != null ? Helpers.toString(mPaidContentText.getText()) : null;
     }
 
-    //public boolean isValid() {
-    //    if (STATUS_OFFLINE.equals(mPlayabilityStatus)) {
-    //        return true;
-    //    }
-    //
-    //    // Check that history data is present
-    //    return getEventId() != null && getVisitorMonitoringData() != null;
-    //}
+    public String getServerAbrStreamingUrl() {
+        return mServerAbrStreamingUrl;
+    }
 
     /**
      * Sync live data
@@ -389,26 +358,12 @@ public class VideoInfo {
         mIsStreamSeekable = dashInfo.isSeekable();
     }
 
-    /**
-     * Sync history data
-     */
-    public void sync(VideoInfo videoInfo) {
-        if (videoInfo == null || Helpers.anyNull(videoInfo.getEventId(), videoInfo.getVisitorMonitoringData(), videoInfo.getOfParam())) {
-            return;
-        }
-
-        setEventId(videoInfo.getEventId());
-        setVisitorMonitoringData(videoInfo.getVisitorMonitoringData());
-        setOfParam(videoInfo.getOfParam());
-        setHistoryBroken(false);
+    public void setAnonymous(boolean isBroken) {
+        mIsAnonymous = isBroken;
     }
 
-    public void setHistoryBroken(boolean isBroken) {
-        mIsHistoryBroken = isBroken;
-    }
-
-    public boolean isHistoryBroken() {
-        return mIsHistoryBroken;
+    public boolean isAnonymous() {
+        return mIsAnonymous;
     }
 
     private void parseTrackingParams() {
@@ -431,9 +386,6 @@ public class VideoInfo {
                 CaptionTrack originTrack = findOriginTrack(mCaptionTracks);
                 String tag = Helpers.runMultiMatcher(originTrack.getName(), tagPattern);
                 for (TranslationLanguage language : mTranslationLanguages) {
-                    //if (!Helpers.equals(originTrack.getLanguageCode(), language.getLanguageCode())) {
-                    //    mMergedCaptionTracks.add(new TranslatedCaptionTrack(originTrack, language, tag));
-                    //}
                     mMergedCaptionTracks.add(new TranslatedCaptionTrack(originTrack, language, tag));
                 }
             }
@@ -457,5 +409,22 @@ public class VideoInfo {
 
     private boolean isAdaptiveFullHD() {
         return getAdaptiveFormats() != null && !getAdaptiveFormats().isEmpty() && "1080p".equals(getAdaptiveFormats().get(0).getQualityLabel());
+    }
+
+    private boolean isEmpty() {
+        if (mAdaptiveFormats == null || mAdaptiveFormats.isEmpty()) {
+            return true;
+        }
+
+        boolean isAllEmpty = true;
+
+        for (AdaptiveVideoFormat format : mAdaptiveFormats) {
+            if (format != null && !format.isEmpty()) {
+                isAllEmpty = false;
+                break;
+            }
+        }
+
+        return isAllEmpty;
     }
 }

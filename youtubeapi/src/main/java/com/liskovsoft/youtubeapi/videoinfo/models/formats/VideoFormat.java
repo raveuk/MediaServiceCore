@@ -2,6 +2,7 @@ package com.liskovsoft.youtubeapi.videoinfo.models.formats;
 
 import androidx.annotation.NonNull;
 
+import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.querystringparser.UrlQueryString;
 import com.liskovsoft.sharedutils.querystringparser.UrlQueryStringFactory;
 import com.liskovsoft.googlecommon.common.converters.jsonpath.JsonPath;
@@ -102,6 +103,7 @@ public class VideoFormat {
     private String mExtractedCipher;
     @JsonPath("$.isDrc")
     private boolean mIsDrc;
+    private boolean mIsSabr;
 
     public String getUrl() {
         parseCipher();
@@ -113,9 +115,31 @@ public class VideoFormat {
         mUrl = url;
     }
 
-    public String getSignatureCipher() {
+    public void setSabrUrl(String url) {
+        if (!isEmpty()) {
+            return; // A dash format. Keep as is.
+        }
+
+        mUrl = url;
+        mIsSabr = true;
+
+        // Doesn't work (403 error)
+        //UrlQueryString urlQuery = getUrlQuery();
+        //
+        //if (urlQuery != null) {
+        //    urlQuery.set("itag", getITag());
+        //    urlQuery.set("aitags", "133%2C134%2C135%2C136%2C137%2C160%2C242%2C243%2C244%2C247%2C248%2C278%2C394%2C395%2C396%2C397%2C398%2C399");
+        //    urlQuery.set("mime", getMimeType());
+        //}
+    }
+
+    public String getSParam() {
         parseCipher();
         return mExtractedCipher;
+    }
+
+    private String getSignature() {
+        return mRealSignature;
     }
 
     public void setSignature(String signature) {
@@ -132,20 +156,16 @@ public class VideoFormat {
         }
     }
 
-    public void setClientVersion(String clientVersion) {
-        setParam(PARAM_CVER, clientVersion);
-    }
-
-    public String getSignature() {
-        return mRealSignature;
-    }
-
-    public String getThrottleCipher() {
+    public String getNParam() {
         return getParam(THROTTLE_PARAM);
     }
 
-    public void setThrottleCipher(String throttleCipher) {
+    public void setNSignature(String throttleCipher) {
         setParam(THROTTLE_PARAM, throttleCipher);
+    }
+
+    public void setClientVersion(String clientVersion) {
+        setParam(PARAM_CVER, clientVersion);
     }
 
     public void setCpn(String cpn) {
@@ -405,5 +425,13 @@ public class VideoFormat {
                 getWidth(),
                 getHeight(),
                 getITag());
+    }
+
+    public boolean isEmpty() {
+        return Helpers.allNulls(mUrl, mCipher, mSignatureCipher);
+    }
+
+    public boolean isSabr() {
+        return mIsSabr;
     }
 }

@@ -6,31 +6,24 @@ import java.io.InputStream;
 import java.util.List;
 
 public interface MediaItemFormatInfo {
-    List<MediaFormat> getDashFormats();
+    List<MediaFormat> getAdaptiveFormats();
     List<MediaFormat> getUrlFormats();
     List<MediaSubtitle> getSubtitles();
     String getHlsManifestUrl();
     String getDashManifestUrl();
     // video metadata
     String getLengthSeconds();
-    void setLengthSeconds(String lengthSeconds);
     String getTitle();
-    void setTitle(String title);
     String getAuthor();
-    void setAuthor(String author);
     String getViewCount();
-    void setViewCount(String viewCount);
     String getDescription();
-    void setDescription(String description);
     String getVideoId();
-    void setVideoId(String videoId);
     String getChannelId();
-    void setChannelId(String channelId);
     boolean isLive();
     boolean isLiveContent();
     boolean containsMedia();
+    boolean containsSabrFormats();
     boolean containsDashFormats();
-    boolean containsDashVideoFormats();
     boolean containsHlsUrl();
     boolean containsDashUrl();
     boolean containsUrlFormats();
@@ -41,7 +34,6 @@ public interface MediaItemFormatInfo {
     List<String> createUrlList();
     MediaItemStoryboard createStoryboard();
     boolean isUnplayable();
-    boolean isHistoryBroken();
     boolean isBotCheckError();
     String getPlayabilityStatus();
     boolean isStreamSeekable();

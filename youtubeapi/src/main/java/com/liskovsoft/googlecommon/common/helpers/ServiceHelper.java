@@ -9,7 +9,7 @@ import androidx.core.text.BidiFormatter;
 
 import com.liskovsoft.mediaserviceinterfaces.data.MediaGroup;
 import com.liskovsoft.sharedutils.helpers.Helpers;
-import com.liskovsoft.googlecommon.app.AppConstants;
+import com.liskovsoft.youtubeapi.common.helpers.AppConstants;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -29,6 +29,7 @@ public class ServiceHelper {
     // Regex to extract hours, minutes, and seconds
     private static final Pattern sIsoDurationPattern = Pattern.compile("PT(?:(\\d+)H)?(?:(\\d+)M)?(?:(\\d+)S)?");
 
+    @Nullable
     public static String videoIdToFullUrl(String videoId) {
         if (videoId == null) {
             return null;

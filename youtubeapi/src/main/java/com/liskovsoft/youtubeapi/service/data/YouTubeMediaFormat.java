@@ -13,7 +13,6 @@ public class YouTubeMediaFormat implements MediaFormat {
     private String mIndex;
     private String mIndexRange;
     private String mUrl;
-    private String mSignatureCipher;
     private String mMimeType;
     private String mITag;
     private boolean mIsDrc;
@@ -44,7 +43,7 @@ public class YouTubeMediaFormat implements MediaFormat {
     public static MediaFormat from(AdaptiveVideoFormat format) {
         YouTubeMediaFormat mediaFormat = createBaseFormat(format);
 
-        mediaFormat.mFormatType = FORMAT_TYPE_DASH;
+        mediaFormat.mFormatType = format.isSabr() ? FORMAT_TYPE_SABR : FORMAT_TYPE_DASH;
 
         mediaFormat.mIndex = format.getIndex();
 
@@ -71,7 +70,6 @@ public class YouTubeMediaFormat implements MediaFormat {
         YouTubeMediaFormat mediaFormat = new YouTubeMediaFormat();
 
         mediaFormat.mUrl = format.getUrl();
-        mediaFormat.mSignatureCipher = format.getSignatureCipher();
         mediaFormat.mMimeType = format.getMimeType();
         String iTag = format.getITag() == 0 ? "" : String.valueOf(format.getITag());
         mediaFormat.mITag = iTag;
@@ -102,28 +100,16 @@ public class YouTubeMediaFormat implements MediaFormat {
     public String getUrl() {
         return mUrl;
     }
-
-    @Override
+    
     public void setUrl(String url) {
         mUrl = url;
-    }
-
-    @Override
-    public String getSignatureCipher() {
-        return mSignatureCipher;
-    }
-
-    @Override
-    public void setSignatureCipher(String cipher) {
-        mSignatureCipher = cipher;
     }
 
     @Override
     public String getMimeType() {
         return mMimeType;
     }
-
-    @Override
+    
     public void setMimeType(String mimeType) {
         mMimeType = mimeType;
     }
@@ -132,8 +118,7 @@ public class YouTubeMediaFormat implements MediaFormat {
     public String getITag() {
         return mITag;
     }
-
-    @Override
+    
     public void setITag(String itag) {
         mITag = itag;
     }
@@ -144,16 +129,10 @@ public class YouTubeMediaFormat implements MediaFormat {
     }
 
     @Override
-    public void setIsDrc(boolean isDrc) {
-        mIsDrc = isDrc;
-    }
-
-    @Override
     public String getClen() {
         return mClen;
     }
-
-    @Override
+    
     public void setClen(String clen) {
         mClen = clen;
     }
@@ -162,8 +141,7 @@ public class YouTubeMediaFormat implements MediaFormat {
     public String getBitrate() {
         return mBitrate;
     }
-
-    @Override
+    
     public void setBitrate(String bitrate) {
         mBitrate = bitrate;
     }
@@ -174,26 +152,15 @@ public class YouTubeMediaFormat implements MediaFormat {
     }
 
     @Override
-    public void setProjectionType(String projectionType) {
-        mProjectionType = projectionType;
-    }
-
-    @Override
     public String getXtags() {
         return mXtags;
-    }
-
-    @Override
-    public void setXtags(String xtags) {
-        mXtags = xtags;
     }
 
     @Override
     public int getWidth() {
         return mWidth;
     }
-
-    @Override
+    
     public void setWidth(int width) {
         mWidth = width;
     }
@@ -203,7 +170,6 @@ public class YouTubeMediaFormat implements MediaFormat {
         return mHeight;
     }
 
-    @Override
     public void setHeight(int height) {
         mHeight = height;
     }
@@ -213,7 +179,6 @@ public class YouTubeMediaFormat implements MediaFormat {
         return mIndex;
     }
 
-    @Override
     public void setIndex(String index) {
         mIndex = index;
     }
@@ -223,7 +188,6 @@ public class YouTubeMediaFormat implements MediaFormat {
         return mInit;
     }
 
-    @Override
     public void setInit(String init) {
         mInit = init;
     }
@@ -233,7 +197,6 @@ public class YouTubeMediaFormat implements MediaFormat {
         return mFps;
     }
 
-    @Override
     public void setFps(String fps) {
         mFps = fps;
     }
@@ -244,18 +207,8 @@ public class YouTubeMediaFormat implements MediaFormat {
     }
 
     @Override
-    public void setLmt(String lmt) {
-        mLmt = lmt;
-    }
-
-    @Override
     public String getQualityLabel() {
         return mQualityLabel;
-    }
-
-    @Override
-    public void setQualityLabel(String qualityLabel) {
-        mQualityLabel = qualityLabel;
     }
 
     @Override
@@ -284,26 +237,10 @@ public class YouTubeMediaFormat implements MediaFormat {
     }
 
     @Override
-    public void setQuality(String quality) {
-
-    }
-
-    @Override
-    public boolean belongsToType(String type) {
-        return false;
-    }
-
-    @Override
-    public void setSignature(String signature) {
-
-    }
-
-    @Override
     public String getSignature() {
         return null;
     }
 
-    @Override
     public void setAudioSamplingRate(String audioSamplingRate) {
 
     }
@@ -313,7 +250,6 @@ public class YouTubeMediaFormat implements MediaFormat {
         return null;
     }
 
-    @Override
     public void setSourceUrl(String sourceUrl) {
         mSourceUrl = sourceUrl;
     }
@@ -328,7 +264,6 @@ public class YouTubeMediaFormat implements MediaFormat {
         return mSegmentUrlList;
     }
 
-    @Override
     public void setSegmentUrlList(List<String> urls) {
         mSegmentUrlList = urls;
     }
@@ -338,7 +273,6 @@ public class YouTubeMediaFormat implements MediaFormat {
         return mGlobalSegmentList;
     }
 
-    @Override
     public void setGlobalSegmentList(List<String> segments) {
         mGlobalSegmentList = segments;
     }
@@ -398,6 +332,7 @@ public class YouTubeMediaFormat implements MediaFormat {
         return mAudioQuality;
     }
 
+    @Override
     public int getFormatType() {
         return mFormatType;
     }

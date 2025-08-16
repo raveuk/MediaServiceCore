@@ -10,6 +10,9 @@ import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.youtubeapi.formatbuilders.mpdbuilder.YouTubeOtfSegmentParser.OtfSegment;
 import com.liskovsoft.youtubeapi.formatbuilders.utils.ITagUtils;
 import com.liskovsoft.youtubeapi.formatbuilders.utils.MediaFormatUtils;
+import com.liskovsoft.youtubeapi.service.data.YouTubeMediaFormat;
+import com.liskovsoft.youtubeapi.service.data.YouTubeMediaItemFormatInfo;
+
 import org.xmlpull.v1.XmlSerializer;
 
 import java.io.IOException;
@@ -31,7 +34,7 @@ public class YouTubeMPDBuilder implements MPDBuilder {
     private static final String NULL_CONTENT_LENGTH = "0";
     private static final String TAG = YouTubeMPDBuilder.class.getSimpleName();
     private static final int MAX_DURATION_SEC = 48 * 60 * 60;
-    private final MediaItemFormatInfo mInfo;
+    private final YouTubeMediaItemFormatInfo mInfo;
     private XmlSerializer mXmlSerializer;
     private StringWriter mWriter;
     private int mId;
@@ -46,7 +49,7 @@ public class YouTubeMPDBuilder implements MPDBuilder {
     private static final Pattern durationPattern1 = Pattern.compile("dur=([^&]*)");
     private static final Pattern durationPattern2 = Pattern.compile("/dur/([^/]*)");
 
-    public YouTubeMPDBuilder(MediaItemFormatInfo info) {
+    private YouTubeMPDBuilder(YouTubeMediaItemFormatInfo info) {
         mInfo = info;
         MediaFormatComparator comp = new MediaFormatComparator();
         mMP4Videos = new TreeSet<>(comp);
@@ -59,11 +62,11 @@ public class YouTubeMPDBuilder implements MPDBuilder {
         initXmlSerializer();
     }
 
-    public static MPDBuilder from(MediaItemFormatInfo formatInfo) {
+    public static MPDBuilder from(YouTubeMediaItemFormatInfo formatInfo) {
         MPDBuilder builder = new YouTubeMPDBuilder(formatInfo);
 
         if (formatInfo.containsDashFormats()) {
-            for (MediaFormat format : formatInfo.getDashFormats()) {
+            for (MediaFormat format : formatInfo.getAdaptiveFormats()) {
                 builder.append(format);
             }
 
@@ -710,7 +713,7 @@ public class YouTubeMPDBuilder implements MPDBuilder {
         return false;
     }
 
-    private void fixOTF(MediaFormat mediaItem) {
+    private void fixOTF(YouTubeMediaFormat mediaItem) {
         if (mediaItem.isOtf()) {
             if (mediaItem.getUrl() != null) {
                 // exo: fix 404 code

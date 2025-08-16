@@ -28,6 +28,8 @@ open class BaseMediaItem : MediaItem {
         get() = field ?: playlistIndexItem
     private var _paramsItem: String? = null
         get() = field ?: playlistParamsItem
+    private var _isShortsItem: Boolean? = null
+        get() = field ?: isShortsItem
 
     //private val _id by lazy { videoId?.hashCode() ?: channelId?.hashCode() ?: sId++ }
     private val _id by lazy { hashCode() }
@@ -52,7 +54,6 @@ open class BaseMediaItem : MediaItem {
     protected open val playlistIdItem: String? = null
     protected open val playlistIndexItem: Int? = null
     protected open val channelIdItem: String? = null
-    protected open val mediaUrl: String? = null
     protected open val playlistParamsItem: String? = null
     protected open val isLiveItem: Boolean? = null
     protected open val isUpcomingItem: Boolean? = null
@@ -156,10 +157,6 @@ open class BaseMediaItem : MediaItem {
         return _playlistIdItem
     }
 
-    override fun getVideoUrl(): String? {
-        return mediaUrl
-    }
-
     override fun getChannelId(): String? {
         return _channelIdItem
     }
@@ -185,7 +182,11 @@ open class BaseMediaItem : MediaItem {
     }
 
     override fun isShorts(): Boolean {
-        return isShortsItem ?: false
+        return _isShortsItem ?: false
+    }
+
+    fun setShorts(isShorts: Boolean) {
+        _isShortsItem = isShorts
     }
 
     override fun isMovie(): Boolean {
@@ -221,10 +222,6 @@ open class BaseMediaItem : MediaItem {
     }
 
     override fun getContentType(): String? {
-        return null
-    }
-
-    override fun getChannelUrl(): String? {
         return null
     }
 

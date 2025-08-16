@@ -11,5 +11,6 @@ public interface ServiceManager {
     ChannelGroupService getChannelGroupService();
     void invalidateCache();
     void refreshCacheIfNeeded();
-    void applyNoPlaybackFix();
+    void applyPlaybackFix();
+    void applySubtitleFix();
 }

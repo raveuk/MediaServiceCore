@@ -4,6 +4,7 @@ import com.liskovsoft.mediaserviceinterfaces.data.MediaFormat;
 import com.liskovsoft.mediaserviceinterfaces.data.MediaItemFormatInfo;
 import com.liskovsoft.mediaserviceinterfaces.data.MediaItemStoryboard;
 import com.liskovsoft.mediaserviceinterfaces.data.MediaSubtitle;
+import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.rx.RxHelper;
 import com.liskovsoft.youtubeapi.app.AppService;
 import com.liskovsoft.youtubeapi.formatbuilders.hlsbuilder.YouTubeUrlListBuilder;
@@ -33,7 +34,7 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
     private boolean mIsLiveContent;
     private boolean mIsLowLatencyLiveStream;
     private boolean mIsStreamSeekable;
-    private List<MediaFormat> mDashFormats;
+    private List<MediaFormat> mAdaptiveFormats;
     private List<MediaFormat> mUrlFormats;
     private List<MediaSubtitle> mSubtitles;
     private String mDashManifestUrl;
@@ -44,7 +45,6 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
     private String mStoryboardSpec;
     private boolean mIsUnplayable;
     private String mPlayabilityStatus;
-    private final long mCreatedTimeMs;
     private String mStartTimestamp;
     private String mUploadDate;
     private long mStartTimeMs;
@@ -52,13 +52,14 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
     private int mSegmentDurationUs;
     private boolean mHasExtendedHlsFormats;
     private float mLoudnessDb;
-    private boolean mContainsDashVideoFormats;
-    private boolean mIsHistoryBroken;
+    private boolean mContainsAdaptiveVideoFormats;
+    private boolean mIsAnonymous;
     private boolean mIsBotCheckError;
     private String mPaidContentText;
+    private String mClickTrackingParams;
 
     private YouTubeMediaItemFormatInfo() {
-        mCreatedTimeMs = System.currentTimeMillis();
+        
     }
 
     public static YouTubeMediaItemFormatInfo from(VideoInfo videoInfo) {
@@ -69,12 +70,12 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
         YouTubeMediaItemFormatInfo formatInfo = new YouTubeMediaItemFormatInfo();
 
         if (videoInfo.getAdaptiveFormats() != null) {
-            formatInfo.mContainsDashVideoFormats = videoInfo.containsAdaptiveVideoInfo();
+            formatInfo.mContainsAdaptiveVideoFormats = videoInfo.containsAdaptiveVideoInfo();
 
-            formatInfo.mDashFormats = new ArrayList<>();
+            formatInfo.mAdaptiveFormats = new ArrayList<>();
 
             for (AdaptiveVideoFormat format : videoInfo.getAdaptiveFormats()) {
-                formatInfo.mDashFormats.add(YouTubeMediaFormat.from(format));
+                formatInfo.mAdaptiveFormats.add(YouTubeMediaFormat.from(format));
             }
         }
 
@@ -110,7 +111,7 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
         // END Tracking params
         formatInfo.mStoryboardSpec = videoInfo.getStoryboardSpec();
         formatInfo.mIsUnplayable = videoInfo.isUnplayable();
-        formatInfo.mIsHistoryBroken = videoInfo.isHistoryBroken();
+        formatInfo.mIsAnonymous = videoInfo.isAnonymous();
         formatInfo.mIsBotCheckError = videoInfo.isUnknownRestricted();
         formatInfo.mPlayabilityStatus = videoInfo.getPlayabilityStatus();
         formatInfo.mIsStreamSeekable = videoInfo.isHfr() || videoInfo.isStreamSeekable();
@@ -137,8 +138,8 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
     }
 
     @Override
-    public List<MediaFormat> getDashFormats() {
-        return mDashFormats;
+    public List<MediaFormat> getAdaptiveFormats() {
+        return mAdaptiveFormats;
     }
 
     @Override
@@ -155,8 +156,7 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
     public String getLengthSeconds() {
         return mLengthSeconds;
     }
-
-    @Override
+    
     public void setLengthSeconds(String lengthSeconds) {
         mLengthSeconds = lengthSeconds;
     }
@@ -167,18 +167,8 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
     }
 
     @Override
-    public void setTitle(String title) {
-        mTitle = title;
-    }
-
-    @Override
     public String getAuthor() {
         return mAuthor;
-    }
-
-    @Override
-    public void setAuthor(String author) {
-        mAuthor = author;
     }
 
     @Override
@@ -187,18 +177,8 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
     }
 
     @Override
-    public void setViewCount(String viewCount) {
-        mViewCount = viewCount;
-    }
-
-    @Override
     public String getDescription() {
         return mDescription;
-    }
-
-    @Override
-    public void setDescription(String description) {
-        mDescription = description;
     }
 
     @Override
@@ -207,18 +187,8 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
     }
 
     @Override
-    public void setVideoId(String videoId) {
-        mVideoId = videoId;
-    }
-
-    @Override
     public String getChannelId() {
         return mChannelId;
-    }
-
-    @Override
-    public void setChannelId(String channelId) {
-        mChannelId = channelId;
     }
 
     @Override
@@ -237,17 +207,21 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
 
     @Override
     public boolean containsMedia() {
-        return containsDashUrl() || containsHlsUrl() || containsDashVideoFormats() || containsUrlFormats();
+        return containsDashUrl() || containsHlsUrl() || containsAdaptiveVideoFormats() || containsUrlFormats();
+    }
+
+    @Override
+    public boolean containsSabrFormats() {
+        return mContainsAdaptiveVideoFormats && mAdaptiveFormats.get(0).getFormatType() == MediaFormat.FORMAT_TYPE_SABR;
     }
 
     @Override
     public boolean containsDashFormats() {
-        return mDashFormats != null && !mDashFormats.isEmpty();
+        return mContainsAdaptiveVideoFormats && mAdaptiveFormats.get(0).getFormatType() == MediaFormat.FORMAT_TYPE_DASH;
     }
-
-    @Override
-    public boolean containsDashVideoFormats() {
-        return mContainsDashVideoFormats;
+    
+    private boolean containsAdaptiveVideoFormats() {
+        return mContainsAdaptiveVideoFormats;
     }
 
     @Override
@@ -360,9 +334,8 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
         return mIsUnplayable;
     }
 
-    @Override
-    public boolean isHistoryBroken() {
-        return mIsHistoryBroken;
+    public boolean isAnonymous() {
+        return mIsAnonymous;
     }
 
     @Override
@@ -422,6 +395,14 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
         return mOfParam;
     }
 
+    public String getClickTrackingParams() {
+        return mClickTrackingParams;
+    }
+
+    public void setClickTrackingParams(String clickTrackingParams) {
+        mClickTrackingParams = clickTrackingParams;
+    }
+
     /**
      * Format is used between multiple functions. Do a little cache.
      */
@@ -431,11 +412,24 @@ public class YouTubeMediaItemFormatInfo implements MediaItemFormatInfo {
         // Check app cipher first. It's not robust check (cipher may be updated not by us).
         // So, also check internal cache state.
         // Future translations (no media) should be polled constantly.
-        //return containsMedia() && isCreatedRecently() && AppService.instance().isCacheActual();
         return containsMedia() && AppService.instance().isPlayerCacheActual();
     }
 
-    private boolean isCreatedRecently() {
-        return !isLive() || System.currentTimeMillis() - mCreatedTimeMs < 60 * 1_000;
+    /**
+     * Sync history data<br/>
+     * Intended to merge signed and unsigned infos (no-playback fix)
+     */
+    public void sync(YouTubeMediaItemFormatInfo formatInfo) {
+        if (formatInfo == null || Helpers.anyNull(formatInfo.getEventId(), formatInfo.getVisitorMonitoringData(), formatInfo.getOfParam())) {
+            mIsAnonymous = false;
+            return;
+        }
+
+        // Intended to merge signed and unsigned infos (no-playback fix)
+        mEventId = formatInfo.getEventId();
+        mVisitorMonitoringData = formatInfo.getVisitorMonitoringData();
+        mOfParam = formatInfo.getOfParam();
+
+        mIsAnonymous = false;
     }
 }
