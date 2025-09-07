@@ -30,3 +30,4 @@ tmp/
 .externalNativeBuild
 fabric.properties
 *BAK.java
+/googleapi/build/
