@@ -18,6 +18,7 @@ import com.liskovsoft.youtubeapi.videoinfo.models.CaptionTrack;
 import com.liskovsoft.youtubeapi.videoinfo.models.TranslationLanguage;
 import com.liskovsoft.youtubeapi.videoinfo.models.VideoInfo;
 import com.liskovsoft.youtubeapi.videoinfo.models.VideoInfoHls;
+import com.liskovsoft.youtubeapi.videoinfo.models.VideoInfoReel;
 
 import java.util.Arrays;
 import java.util.List;
@@ -34,6 +35,7 @@ public class VideoInfoService extends VideoInfoServiceBase {
     // VIDEO_INFO_TV and VIDEO_INFO_TV_EMBED are the only ones working in North America
     // VIDEO_INFO_MWEB - can bypass SABR-only responses
     private final static AppClient[] VIDEO_INFO_TYPE_LIST = {
+            AppClient.ANDROID_REEL, // doesn't require pot
             AppClient.WEB_EMBED,
             AppClient.IOS,
             AppClient.TV,
@@ -137,7 +139,7 @@ public class VideoInfoService extends VideoInfoServiceBase {
 
     public void switchNextFormat() {
         // Try to reset pot cache for the last video
-        if (!mIsUnplayable && isPotSupported() && PoTokenGate.resetCache()) {
+        if (!mIsUnplayable && isWebPotRequired() && PoTokenGate.resetCache()) {
             return;
         }
         // The Premium is likely broken
@@ -192,23 +194,39 @@ public class VideoInfoService extends VideoInfoServiceBase {
     }
 
     private VideoInfo getVideoInfo(AppClient client, String videoInfoQuery) {
-        if (client.isPlayerQueryBroken()) {
-            return null;
+        boolean skipAuth = !client.isAuthSupported() || mSkipAuthBlock;
+
+        if (client.isReelPlayer()) {
+            Call<VideoInfoReel> wrapper = mVideoInfoApi.getVideoInfoReel(videoInfoQuery, mAppService.getVisitorData(), client.getUserAgent());
+            return getVideoInfoReel(wrapper, skipAuth);
         }
 
         Call<VideoInfo> wrapper = mVideoInfoApi.getVideoInfo(videoInfoQuery, mAppService.getVisitorData(), client.getUserAgent());
-
-        return getVideoInfo(wrapper, !client.isAuthSupported() || mSkipAuthBlock);
+        return getVideoInfo(wrapper, skipAuth);
     }
 
     private @Nullable VideoInfo getVideoInfo(Call<VideoInfo> wrapper, boolean skipAuth) {
         VideoInfo videoInfo = RetrofitHelper.get(wrapper, skipAuth);
 
-        if (videoInfo != null && skipAuth) {
-            videoInfo.setAnonymous(true);
+        if (videoInfo == null) {
+            return null;
         }
 
+        videoInfo.setAnonymous(skipAuth);
+
         return videoInfo;
+    }
+
+    private @Nullable VideoInfo getVideoInfoReel(Call<VideoInfoReel> wrapper, boolean skipAuth) {
+        VideoInfoReel videoInfo = RetrofitHelper.get(wrapper, skipAuth);
+
+        if (videoInfo == null || videoInfo.getVideoInfo() == null) {
+            return null;
+        }
+
+        videoInfo.getVideoInfo().setAnonymous(skipAuth);
+
+        return videoInfo.getVideoInfo();
     }
 
     private VideoInfoHls getVideoInfoIOSHls(String videoId, String clickTrackingParams) {
@@ -282,6 +300,7 @@ public class VideoInfoService extends VideoInfoServiceBase {
         } else if (videoInfo.isUnplayable()) {
             result = getFirstPlayable(
                     () -> getVideoInfo(AppClient.TV, videoId, clickTrackingParams), // Supports auth. Fixes "please sign in" bug!
+                    () -> getVideoInfo(AppClient.ANDROID_REEL, videoId, clickTrackingParams), // Fixes "please sign in" bug!
                     () -> getVideoInfo(AppClient.WEB_EMBED, videoId, clickTrackingParams), // Restricted (18+) videos
                     () -> getVideoInfoGeo(AppClient.WEB, videoId, clickTrackingParams) // Video clip blocked in current location
             );
@@ -358,8 +377,8 @@ public class VideoInfoService extends VideoInfoServiceBase {
     }
 
     @Override
-    protected boolean isPotSupported() {
-        return mVideoInfoType != null && mVideoInfoType.isPotSupported();
+    protected boolean isWebPotRequired() {
+        return mVideoInfoType != null && mVideoInfoType.isWebPotRequired();
     }
 
     private boolean isAuthSupported() {
