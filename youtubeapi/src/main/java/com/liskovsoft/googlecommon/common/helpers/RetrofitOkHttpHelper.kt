@@ -5,8 +5,8 @@ import com.liskovsoft.sharedutils.cronet.CronetManager
 import com.liskovsoft.sharedutils.helpers.Helpers
 import com.liskovsoft.sharedutils.okhttp.OkHttpCommons
 import com.liskovsoft.sharedutils.prefs.GlobalPreferences
-import com.liskovsoft.youtubeapi.common.helpers.AppConstants
 import com.liskovsoft.youtubeapi.app.AppService
+import com.liskovsoft.youtubeapi.common.helpers.AppConstants
 import com.liskovsoft.youtubeapi.search.SearchApi
 import okhttp3.Headers
 import okhttp3.HttpUrl
@@ -30,29 +30,33 @@ internal object RetrofitOkHttpHelper {
 
     @JvmStatic
     fun addAuthSkip(request: Request) {
-        if (!authSkipList.contains(request))
+        if (!authSkipList.contains(request)) {
             authSkipList.add(request)
+        }
     }
 
-    private val commonHeaders = mapOf(
-        // Enable compression in production
-        "Accept-Encoding" to DefaultHeaders.ACCEPT_ENCODING,
-    )
+    private val commonHeaders =
+        mapOf(
+            // Enable compression in production
+            "Accept-Encoding" to DefaultHeaders.ACCEPT_ENCODING,
+        )
 
-    private val apiHeaders = mapOf(
-        "User-Agent" to DefaultHeaders.APP_USER_AGENT,
-        "Referer" to DefaultHeaders.REFERER
-    )
+    private val apiHeaders =
+        mapOf(
+            "User-Agent" to DefaultHeaders.APP_USER_AGENT,
+            "Referer" to DefaultHeaders.REFERER,
+        )
 
-    private val apiPrefixes = arrayOf(
-        "https://www.googleapis.com/upload/drive/v3",
-        "https://www.googleapis.com/drive/v3",
-        "https://m.youtube.com/youtubei/v1/",
-        "https://www.youtube.com/youtubei/v1/",
-        "https://youtubei.googleapis.com/youtubei/v1",
-        "https://www.youtube.com/api/stats/",
-        "https://clients1.google.com/complete/"
-    )
+    private val apiPrefixes =
+        arrayOf(
+            "https://www.googleapis.com/upload/drive/v3",
+            "https://www.googleapis.com/drive/v3",
+            "https://m.youtube.com/youtubei/v1/",
+            "https://www.youtube.com/youtubei/v1/",
+            "https://youtubei.googleapis.com/youtubei/v1",
+            "https://www.youtube.com/api/stats/",
+            "https://clients1.google.com/complete/",
+        )
 
     private val tParamSuffixes = listOf("/browse", "/next", "/reel", "/playlist")
 
@@ -60,19 +64,19 @@ internal object RetrofitOkHttpHelper {
         val builder = OkHttpClient.Builder()
         addCommonHeaders(builder)
         OkHttpCommons.setupBuilder(builder)
-        //addCronetInterceptor(builder)
+        // addCronetInterceptor(builder)
         return builder.build()
     }
 
     private fun addCommonHeaders(builder: OkHttpClient.Builder) {
         builder.addInterceptor { chain ->
             val request = chain.request()
-            val headers = request.headers()
+            val headers = request.headers
             val requestBuilder = request.newBuilder()
 
             applyHeaders(this.commonHeaders, headers, requestBuilder)
 
-            val url = request.url().toString()
+            val url = request.url.toString()
 
             if (Helpers.startsWithAny(url, *apiPrefixes)) {
                 val doSkipAuth = authSkipList.remove(request)
@@ -80,16 +84,21 @@ internal object RetrofitOkHttpHelper {
                 // Empty Home fix (anonymous user) and improve Recommendations for everyone
                 headers["X-Goog-Visitor-Id"] ?: AppService.instance().visitorData?.let { requestBuilder.header("X-Goog-Visitor-Id", it) }
 
-                if (doSkipAuth) // visitor generation fix
+                if (doSkipAuth) {
+                    // visitor generation fix
                     requestBuilder.removeHeader("X-Goog-Visitor-Id")
+                }
 
                 applyHeaders(this.apiHeaders, headers, requestBuilder)
 
                 val tParam = if (tParamSuffixes.any { url.contains(it) }) YouTubeHelper.generateTParameter() else null
 
                 if (authHeaders.isEmpty() || doSkipAuth) {
-                    applyQueryKeys(mapOf("key" to AppConstants.API_KEY, "prettyPrint" to "false", "t" to tParam),
-                        request, requestBuilder)
+                    applyQueryKeys(
+                        mapOf("key" to AppConstants.API_KEY, "prettyPrint" to "false", "t" to tParam),
+                        request,
+                        requestBuilder,
+                    )
                 } else {
                     applyQueryKeys(mapOf("prettyPrint" to "false", "t" to tParam), request, requestBuilder)
                     // Fix suggestions on non branded accounts
@@ -105,7 +114,11 @@ internal object RetrofitOkHttpHelper {
         }
     }
 
-    private fun applyHeaders(newHeaders: Map<String, String?>, oldHeaders: Headers, builder: Request.Builder) {
+    private fun applyHeaders(
+        newHeaders: Map<String, String?>,
+        oldHeaders: Headers,
+        builder: Request.Builder,
+    ) {
         for (header in newHeaders) {
             if (disableCompression && header.key == "Accept-Encoding") {
                 continue
@@ -116,16 +129,21 @@ internal object RetrofitOkHttpHelper {
         }
     }
 
-    private fun applyQueryKeys(keys: Map<String, String?>, request: Request, builder: Request.Builder) {
-        val originUrl = request.url()
+    private fun applyQueryKeys(
+        keys: Map<String, String?>,
+        request: Request,
+        builder: Request.Builder,
+    ) {
+        val originUrl = request.url
 
         var newUrlBuilder: HttpUrl.Builder? = null
 
         for (entry in keys) {
             // Don't override existing keys
             originUrl.queryParameter(entry.key) ?: run {
-                if (entry.value == null)
+                if (entry.value == null) {
                     return@run
+                }
 
                 if (newUrlBuilder == null) {
                     newUrlBuilder = originUrl.newBuilder()
