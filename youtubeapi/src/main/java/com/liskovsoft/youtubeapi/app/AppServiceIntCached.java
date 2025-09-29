@@ -43,30 +43,16 @@ public class AppServiceIntCached extends AppServiceInt {
             }
 
             YouTubeMediaItemService.instance().invalidateCache();
-            try {
-                mPlayerDataExtractor = super.getPlayerDataExtractor(playerUrl);
-                if (mPlayerDataExtractor.validate()) {
-                    if (check(mAppInfo)) {
-                        getData().setAppInfo(mAppInfo);
-                    }
-                } else {
-                    restoreSafePlayerVersion();
-                }
-            } catch (Throwable e) { // StackOverflowError | IllegalStateException
-                e.printStackTrace();
-                restoreSafePlayerVersion();
-            }
+
+            //boolean forceBackupUrl = AppConstants.playerUrls.get(0).contains("0004de42"); // temp fix
+
+            firstValidExtractor(
+                    Helpers.equals(playerUrl, getFailedPlayerUrl()) ? null : playerUrl,
+                    check(getData().getAppInfo()) ? getData().getAppInfo().getPlayerUrl() : null,
+                    AppConstants.playerUrls.get(0)
+            );
 
             return mPlayerDataExtractor;
-        }
-    }
-
-    private void restoreSafePlayerVersion() {
-        getData().setFailedAppInfo(mAppInfo);
-        if (check(getData().getAppInfo())) { // can restore?
-            mPlayerDataExtractor = super.getPlayerDataExtractor(getData().getAppInfo().getPlayerUrl());
-        } else {
-            mPlayerDataExtractor = super.getPlayerDataExtractor(AppConstants.playerUrls.get(0));
         }
     }
 
@@ -120,5 +106,40 @@ public class AppServiceIntCached extends AppServiceInt {
 
     private String getFailedPlayerUrl() {
         return getData().getFailedAppInfo() != null ? getData().getFailedAppInfo().getPlayerUrl() : null;
+    }
+
+    private void firstValidExtractor(String... playerUrls) {
+        int idx = -1;
+        final int MAIN = 0;
+        final int DATA = 1;
+        final int FALLBACK = 2;
+
+        for (String url : playerUrls) {
+            idx++;
+            if (url == null) {
+                continue;
+            }
+
+            mPlayerDataExtractor = super.getPlayerDataExtractor(url);
+
+            if (mPlayerDataExtractor.validate()) {
+                switch (idx) {
+                    case MAIN:
+                        if (check(mAppInfo)) {
+                            getData().setAppInfo(mAppInfo);
+                        }
+                        break;
+                    case DATA:
+                        getData().setFailedAppInfo(mAppInfo);
+                        break;
+                    case FALLBACK:
+                        getData().setFailedAppInfo(mAppInfo);
+                        getData().setAppInfo(null);
+                        break;
+                }
+
+                break;
+            }
+        }
     }
 }
