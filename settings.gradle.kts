@@ -24,16 +24,16 @@ dependencyResolutionManagement {
 rootProject.name = "MediaServiceCore"
 
 // prepare for git submodules
-val sharedDir = if (File(rootDir, "../SharedModules").exists())
-    File(rootDir, "../SharedModules")
-else
-    File(rootDir, "./SharedModules")
+val sharedDir =
+    if (File(rootDir, "../SharedModules").exists()) {
+        File(rootDir, "../SharedModules")
+    } else {
+        File(rootDir, "./SharedModules")
+    }
 
-include(":mediaserviceinterfaces", ":youtubeapi", ":googleapi", ":sharedtests", ":commons-io-2.8.0", ":sharedutils")
+include(":mediaserviceinterfaces", ":youtubeapi", ":googleapi", ":sharedtests", ":sharedutils")
 project(":mediaserviceinterfaces").projectDir = File(rootDir, "mediaserviceinterfaces")
 project(":youtubeapi").projectDir = File(rootDir, "youtubeapi")
 project(":googleapi").projectDir = File(rootDir, "googleapi")
 project(":sharedtests").projectDir = File(sharedDir, "sharedtests")
-project(":commons-io-2.8.0").projectDir = File(sharedDir, "commons-io-2.8.0")
 project(":sharedutils").projectDir = File(sharedDir, "sharedutils")
-

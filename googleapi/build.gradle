@@ -58,7 +58,8 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:' + testXSupportLibraryVersion
     androidTestImplementation 'androidx.test:rules:' + testXSupportLibraryVersion
 
-    implementation project(':commons-io-2.8.0') // My Android 4.3 fix
+//    implementation project(':commons-io-2.8.0') // My Android 4.3 fix
+    implementation("commons-io:commons-io:2.5")
     implementation project(':sharedutils')
     implementation project(':mediaserviceinterfaces')
 
