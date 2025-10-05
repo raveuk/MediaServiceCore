@@ -2,6 +2,8 @@ package com.liskovsoft.youtubeapi.app;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.sharedutils.prefs.GlobalPreferences;
 import com.liskovsoft.youtubeapi.auth.V1.AuthApi;
@@ -59,6 +61,10 @@ public class AppService {
         return mAppServiceInt.getPlayerDataExtractor().extractNSig(nParam);
     }
 
+    /**
+     * nParams - throttle params<br/>
+     * sParams - signature used in music videos
+     */
     public Pair<List<String>, List<String>> bulkSigExtract(List<String> nParams, List<String> sParams) {
         if (Helpers.allNulls(nParams, sParams) || mAppServiceInt.getPlayerDataExtractor() == null) {
             return null;
@@ -168,7 +174,14 @@ public class AppService {
         return mAppServiceInt.isPlayerCacheActual();
     }
 
+    @NonNull
     public Context getContext() {
-        return GlobalPreferences.isInitialized() ? GlobalPreferences.sInstance.getContext() : null;
+        Context context = GlobalPreferences.isInitialized() ? GlobalPreferences.sInstance.getContext() : null;
+
+        if (context == null) {
+            throw new IllegalStateException("The Context isn't initialized yet");
+        }
+
+        return context;
     }
 }

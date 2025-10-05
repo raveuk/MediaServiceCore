@@ -1,7 +1,7 @@
 package com.liskovsoft.youtubeapi.videoinfo;
 
-import androidx.annotation.NonNull;
 import com.liskovsoft.sharedutils.helpers.Helpers;
+import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.youtubeapi.app.AppService;
 import com.liskovsoft.googlecommon.common.api.FileApi;
 import com.liskovsoft.youtubeapi.app.PoTokenGate;
@@ -36,20 +36,20 @@ public abstract class VideoInfoServiceBase {
         mFileApi = RetrofitHelper.create(FileApi.class);
     }
 
+    // Will be overridden in descendants
     protected boolean isWebPotRequired() {
         return false;
     }
 
-    protected void decipherFormats(VideoInfo videoInfo) {
+    protected void transformFormats(VideoInfo videoInfo) {
         applySabrFixes(videoInfo.getAdaptiveFormats(), videoInfo.getServerAbrStreamingUrl());
 
-        // Process params
-        //decipherFormats(videoInfo.getAdaptiveFormats());
-        //decipherFormats(videoInfo.getRegularFormats());
+        decipherFormats(videoInfo.getAdaptiveFormats(), videoInfo.getRegularFormats());
 
-        List<VideoFormat> formatList = new ArrayList<>(videoInfo.getAdaptiveFormats());
-        formatList.addAll(videoInfo.getRegularFormats());
-        decipherFormats(formatList);
+        if (videoInfo.isLive()) {
+            Log.d(TAG, "Enable seeking support on live streams...");
+            videoInfo.sync(getDashInfo(videoInfo));
+        }
     }
 
     private void applySabrFixes(List<? extends VideoFormat> formats, String serverAbrStreamingUrl) {
@@ -63,20 +63,20 @@ public abstract class VideoInfoServiceBase {
         }
     }
 
-    private void decipherFormats(List<? extends VideoFormat> formats) {
-        if (formats == null) {
+    private void decipherFormats(List<? extends VideoFormat> adaptiveFormats, List<? extends VideoFormat> regularFormats) {
+        List<VideoFormat> formats = new ArrayList<>();
+        if (adaptiveFormats != null)
+            formats.addAll(adaptiveFormats);
+        if (regularFormats != null)
+            formats.addAll(regularFormats);
+
+        if (formats.isEmpty()) {
             return;
         }
-
-        //List<String> nParams = extractNParams(formats);
-        //List<String> sParams = extractSParams(formats);
 
         Pair<List<String>, List<String>> result = mAppService.bulkSigExtract(extractNParams(formats), extractSParams(formats));
 
         if (result != null) {
-            //List<String> nSignatures = mAppService.extractNSig(nParams);
-            //List<String> signatures = mAppService.extractSig(sParams);
-
             List<String> nSignatures = result.getFirst();
             List<String> signatures = result.getSecond();
 
@@ -88,7 +88,7 @@ public abstract class VideoInfoServiceBase {
         //applyAdditionalStrings(formats);
 
         if (isWebPotRequired()) {
-            applyPoToken(formats, PoTokenGate.getSessionPoToken());
+            applySessionPoToken(formats, PoTokenGate.getWebSessionPoToken());
         }
     }
 
@@ -141,7 +141,7 @@ public abstract class VideoInfoServiceBase {
         }
     }
 
-    private static void applyPoToken(List<? extends VideoFormat> formats, String poToken) {
+    private static void applySessionPoToken(List<? extends VideoFormat> formats, String poToken) {
         if (poToken == null) {
             return;
         }
@@ -197,7 +197,7 @@ public abstract class VideoInfoServiceBase {
         return new DashInfoHeaders(RetrofitHelper.getHeaders(mFileApi.getHeaders(url)));
     }
 
-    protected DashInfo getDashInfo(VideoInfo videoInfo) {
+    private DashInfo getDashInfo(VideoInfo videoInfo) {
         if (videoInfo == null || videoInfo.getAdaptiveFormats() == null || videoInfo.getAdaptiveFormats().isEmpty()) {
             return null;
         }
@@ -215,6 +215,10 @@ public abstract class VideoInfoServiceBase {
     private DashInfo getCumulativeDashInfo(VideoInfo videoInfo) {
         AdaptiveVideoFormat format = getSmallestAudio(videoInfo);
 
+        if (format == null) {
+            return null;
+        }
+
         try {
             return getDashInfoHeaders(format.getUrl());
         } catch (ArithmeticException | NumberFormatException | IllegalStateException ex) {
@@ -227,33 +231,21 @@ public abstract class VideoInfoServiceBase {
         }
     }
 
-    @NonNull
     private AdaptiveVideoFormat getSmallestAudio(VideoInfo videoInfo) {
         AdaptiveVideoFormat format = Helpers.findFirst(videoInfo.getAdaptiveFormats(),
                 item -> MediaFormatUtils.isAudio(item.getMimeType())); // smallest format
-
-        format.setSignature(mAppService.extractSig(format.getSParam()));
-        format.setNSignature(mAppService.extractNSig(format.getNParam()));
         return format;
     }
 
-    @NonNull
     private AdaptiveVideoFormat getSmallestVideo(VideoInfo videoInfo) {
         AdaptiveVideoFormat format = Helpers.findLast(videoInfo.getAdaptiveFormats(),
                 item -> MediaFormatUtils.isVideo(item.getMimeType())); // smallest format
-
-        format.setSignature(mAppService.extractSig(format.getSParam()));
-        format.setNSignature(mAppService.extractNSig(format.getNParam()));
         return format;
     }
-
-    @NonNull
+    
     private AdaptiveVideoFormat getLargestVideo(VideoInfo videoInfo) {
         AdaptiveVideoFormat format = Helpers.findFirst(videoInfo.getAdaptiveFormats(),
                 item -> MediaFormatUtils.isVideo(item.getMimeType())); // first is largest
-
-        format.setSignature(mAppService.extractSig(format.getSParam()));
-        format.setNSignature(mAppService.extractNSig(format.getNParam()));
         return format;
     }
 }

@@ -16,8 +16,7 @@ internal class PlayerDataExtractor(val playerUrl: String) {
     private val data
         get() = MediaServiceData.instance()
     private var nFuncCode: Boolean = false
-    private var sigFuncCode: Boolean = false
-    private var nSigTmp: Pair<String?, String?>? = null
+    private var sFuncCode: Boolean = false
     private var cpnCode: String? = null
     private var signatureTimestamp: String? = null
     private val fixedPlayerUrl by lazy {
@@ -47,26 +46,11 @@ internal class PlayerDataExtractor(val playerUrl: String) {
     }
 
     fun extractNSig(nParam: String): String? {
-        if (!nFuncCode)
-            return null
-
-        if (nSigTmp?.first == nParam) return nSigTmp?.second
-
-        val nSig = extractNSigReal(nParam)
-
-        nSigTmp = Pair(nParam, nSig)
-
-        return nSig
+        return bulkSigExtract(listOf(nParam), null).first?.firstOrNull()
     }
 
     fun extractSig(sParams: List<String?>): List<String?>? {
-        if (!sigFuncCode)
-            return null
-
-        if (sParams.all { it == null })
-            return sParams.map { null }
-
-        return extractSigReal(sParams.filterNotNull())
+        return bulkSigExtract(null, sParams).second
     }
 
     fun bulkSigExtract(nParams: List<String?>?, sParams: List<String?>?): Pair<List<String?>?, List<String?>?> {
@@ -74,19 +58,13 @@ internal class PlayerDataExtractor(val playerUrl: String) {
             return Pair(null, null)
         }
 
-        val nCached: List<String?>? = null
-        val sCached: List<String?>? = null
+        val response = bulkSigExtractReal(nParams, sParams)
 
-        val response = bulkSigExtractReal(
-            if (nFuncCode) nParams else null,
-            if (sigFuncCode) sParams else null
-        )
-
-        return Pair(nCached ?: response.first, sCached ?: response.second)
+        return Pair(response.first, response.second)
     }
 
     fun createClientPlaybackNonce(): String? {
-        return cpnCode?.let { ClientPlaybackNonceExtractor.createClientPlaybackNonce(it) } ?: YouTubeHelper.generateTParameter()
+        return cpnCode?.let { ClientPlaybackNonceExtractor.createClientPlaybackNonce(it) } ?: YouTubeHelper.generateCPNParameter()
     }
 
     fun getSignatureTimestamp(): String? {
@@ -96,7 +74,7 @@ internal class PlayerDataExtractor(val playerUrl: String) {
     fun validate(): Boolean {
         // TODO: fix cpn code
         // return mNFuncCode && mSigFuncCode && mCPNCode != null && mSignatureTimestamp != null
-        return nFuncCode && sigFuncCode && signatureTimestamp != null
+        return nFuncCode && sFuncCode && signatureTimestamp != null
     }
 
     private fun extractNSigReal(nParam: String): String? {
@@ -112,18 +90,18 @@ internal class PlayerDataExtractor(val playerUrl: String) {
             return Pair(null, null)
         }
 
-        val nRequest = nParams?.filterNotNull()?.distinct()?.takeIf { it.isNotEmpty() }?.let {
+        var nProcessed: List<String?>? = null
+        var sProcessed: List<String?>? = null
+
+        val nRequest = nParams?.takeIf { nFuncCode }?.filterNotNull()?.takeIf { it.isNotEmpty() }?.distinct()?.let {
             JsChallengeRequest(JsChallengeType.N, ChallengeInput(fixedPlayerUrl, it))
         }
 
-        val sRequest = sParams?.filterNotNull()?.distinct()?.takeIf { it.isNotEmpty() }?.let {
+        val sRequest = sParams?.takeIf { sFuncCode }?.filterNotNull()?.takeIf { it.isNotEmpty() }?.distinct()?.let {
             JsChallengeRequest(JsChallengeType.SIG, ChallengeInput(fixedPlayerUrl, it))
         }
 
         val result = V8ChallengeProvider.bulkSolve(listOfNotNull(nRequest, sRequest))
-
-        var nProcessed: List<String?>? = null
-        var sProcessed: List<String?>? = null
 
         for (item in result) {
             when (item.response?.type) {
@@ -196,7 +174,7 @@ internal class PlayerDataExtractor(val playerUrl: String) {
                             nFuncCode = true
                     JsChallengeType.SIG ->
                         if (item.response.output.results[param]?.let { it != param } ?: false)
-                            sigFuncCode = true
+                            sFuncCode = true
                     else -> {}
                 }
             }

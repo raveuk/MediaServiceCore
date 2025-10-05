@@ -44,6 +44,8 @@ public class VideoInfoService extends VideoInfoServiceBase {
     };
     @Nullable
     private AppClient mVideoInfoType = null;
+    @Nullable
+    private AppClient mRecentInfoType = null;
     private boolean mSkipAuth;
     private boolean mSkipAuthBlock;
     private List<TranslationLanguage> mCachedTranslationLanguages;
@@ -95,7 +97,7 @@ public class VideoInfoService extends VideoInfoServiceBase {
 
         mSkipAuthBlock = false;
 
-        decipherFormats(result);
+        transformFormats(result);
 
         return result;
     }
@@ -176,7 +178,7 @@ public class VideoInfoService extends VideoInfoServiceBase {
         }
 
         mVideoInfoType = Helpers.getNextValue(mVideoInfoType, VIDEO_INFO_TYPE_LIST);
-        mSkipAuth = !isAuthSupported();
+        mSkipAuth = !isAuthSupported(mVideoInfoType);
     }
 
     private VideoInfo getVideoInfo(AppClient client, String videoId, String clickTrackingParams) {
@@ -195,6 +197,7 @@ public class VideoInfoService extends VideoInfoServiceBase {
 
     private VideoInfo getVideoInfo(AppClient client, String videoInfoQuery) {
         boolean skipAuth = !client.isAuthSupported() || mSkipAuthBlock;
+        mRecentInfoType = client;
 
         if (client.isReelPlayer()) {
             Call<VideoInfoReel> wrapper = mVideoInfoApi.getVideoInfoReel(videoInfoQuery, mAppService.getVisitorData(), client.getUserAgent());
@@ -243,11 +246,6 @@ public class VideoInfoService extends VideoInfoServiceBase {
     private void applyFixesIfNeeded(VideoInfo result, String videoId, String clickTrackingParams) {
         if (result == null || result.isUnplayable()) {
             return;
-        }
-
-        if (result.isLive()) {
-            Log.d(TAG, "Enable seeking support on live streams...");
-            result.sync(getDashInfo(result));
         }
 
         if (shouldObtainExtendedFormats(result) || result.isStoryboardBroken()) {
@@ -300,7 +298,8 @@ public class VideoInfoService extends VideoInfoServiceBase {
         } else if (videoInfo.isUnplayable()) {
             result = getFirstPlayable(
                     () -> getVideoInfo(AppClient.TV, videoId, clickTrackingParams), // Supports auth. Fixes "please sign in" bug!
-                    () -> getVideoInfo(AppClient.ANDROID_REEL, videoId, clickTrackingParams), // Fixes "please sign in" bug!
+                    () -> getVideoInfo(AppClient.TV_SIMPLY, videoId, clickTrackingParams), // Fixes "bot check error" bug?
+                    () -> getVideoInfo(AppClient.ANDROID_REEL, videoId, clickTrackingParams), // Fixes "bot check error" bug?
                     () -> getVideoInfo(AppClient.WEB_EMBED, videoId, clickTrackingParams), // Restricted (18+) videos
                     () -> getVideoInfoGeo(AppClient.WEB, videoId, clickTrackingParams) // Video clip blocked in current location
             );
@@ -378,11 +377,11 @@ public class VideoInfoService extends VideoInfoServiceBase {
 
     @Override
     protected boolean isWebPotRequired() {
-        return mVideoInfoType != null && mVideoInfoType.isWebPotRequired();
+        return mRecentInfoType != null && mRecentInfoType.isWebPotRequired();
     }
 
-    private boolean isAuthSupported() {
-        return mVideoInfoType != null && mVideoInfoType.isAuthSupported();
+    private static boolean isAuthSupported(AppClient client) {
+        return client != null && client.isAuthSupported();
     }
 
     private static MediaServiceData getData() {

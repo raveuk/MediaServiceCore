@@ -166,7 +166,7 @@ internal object RetrofitOkHttpHelper {
     }
 
     private fun addCronetInterceptor(builder: OkHttpClient.Builder) {
-        val engine = CronetManager.getEngine(GlobalPreferences.sInstance.context)
+        val engine = CronetManager.getEngine(AppService.instance().context)
         if (engine != null) {
             builder.addInterceptor(CronetInterceptor.newBuilder(engine).build())
         }
