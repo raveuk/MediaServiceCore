@@ -81,7 +81,7 @@ dependencies {
     // implementation 'app.cash.quickjs:quickjs-android:' + quickjsVersion
     //implementation 'com.squareup.duktape:duktape-android:' + duktapeVersion
     //implementation 'org.mozilla:rhino:' + rhinoVersion
-    implementation 'com.eclipsesource.j2v8:j2v8:' + j2v8Version + '@aar'
+    implementation 'io.github.k4k7us23:j2v8:' + j2v8Version + '@aar'
     // https://mvnrepository.com/artifact/com.eclipsesource.j2v8/j2v8/6.2.1
     //implementation(name: 'j2v8-6.2.1', ext: 'aar')
 
