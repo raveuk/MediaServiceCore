@@ -9,6 +9,7 @@ import com.liskovsoft.youtubeapi.app.AppServiceInt
 import com.liskovsoft.youtubeapi.app.playerdata.PlayerDataExtractor
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -37,8 +38,14 @@ class PlayerDataExtractorTest {
     @Test
     fun testExtractNSig() {
         val playerUrl = getPlayerUrl()
+        testPlayerExtractorValid(playerUrl)
+        testPlayerExtractorValid(getTestingUrls().first())
+    }
+
+    private fun testPlayerExtractorValid(playerUrl: String) {
         val extractor = PlayerDataExtractor(playerUrl)
         assertNotNull("NSig not null for $playerUrl", extractor.extractNSig("5cNpZqIJ7ixNqU68Y7S"))
+        assertTrue("PlayerExtractor validated", extractor.validate())
     }
 
     @Test
@@ -47,21 +54,30 @@ class PlayerDataExtractorTest {
 
         mAppServiceInt.getPlayerDataExtractor(playerUrl).validate()
     }
-
-    @Ignore("Temporary not supported")
+    
     @Test
     fun testNSigPlayerVersions() {
-        AppConstants.playerUrls.forEach { testNSigPlayerUrl(it) }
+        getTestingUrls().forEach { testNSigPlayerUrl(it) }
     }
-
-    @Ignore("Temporary not supported")
+    
     @Test
     fun testSigPlayerVersions() {
-        AppConstants.playerUrls.forEach { testSigPlayerUrl(it) }
+        getTestingUrls().forEach { testSigPlayerUrl(it) }
+    }
+
+    @Test
+    fun testCPNPlayerVersions() {
+        getTestingUrls().forEach { testCPNPlayerUrl(it) }
+    }
+
+    @Test
+    fun testTimestampPlayerVersions() {
+        getTestingUrls().forEach { testTimestampPlayerUrl(it) }
     }
 
     @Test
     fun testSingleNSigPlayerVersion() {
+        testNSigPlayerUrl("https://www.youtube.com/s/player/17ad44a3/tv-player-es6.vflset/tv-player-es6.js")
         //testNSigPlayerUrl("https://www.youtube.com/s/player/a61444a1/tv-player-es6.vflset/tv-player-es6.js")
         testNSigPlayerUrl("https://www.youtube.com/s/player/a61444a1/tv-player-ias.vflset/tv-player-ias.js")
 
@@ -71,20 +87,9 @@ class PlayerDataExtractorTest {
 
     @Test
     fun testSingleSigPlayerVersion() {
+        testSigPlayerUrl("https://www.youtube.com/s/player/17ad44a3/tv-player-es6.vflset/tv-player-es6.js")
         testSigPlayerUrl("https://www.youtube.com/s/player/2b83d2e0/tv-player-ias.vflset/tv-player-ias.js")
         //testSigPlayerUrl("https://www.youtube.com/s/player/2b83d2e0/tv-player-es6.vflset/tv-player-es6.js")
-    }
-
-    @Ignore("Temporary not supported")
-    @Test
-    fun testCPNPlayerVersions() {
-        AppConstants.playerUrls.forEach { testCPNPlayerUrl(it) }
-    }
-
-    @Ignore("Temporary not supported")
-    @Test
-    fun testTimestampPlayerVersions() {
-        AppConstants.playerUrls.forEach { testTimestampPlayerUrl(it) }
     }
 
     @Test
@@ -136,4 +141,6 @@ class PlayerDataExtractorTest {
         val timestamp = extractor.getSignatureTimestamp()
         assertNotNull("Timestamp not null for url $url", timestamp)
     }
+
+    private fun getTestingUrls(): List<String> = AppConstants.playerUrls.take(5) // do limit to avoid OOM
 }

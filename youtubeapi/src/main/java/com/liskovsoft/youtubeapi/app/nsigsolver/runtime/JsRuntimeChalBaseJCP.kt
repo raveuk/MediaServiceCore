@@ -16,7 +16,7 @@ import com.liskovsoft.youtubeapi.app.nsigsolver.provider.JsChallengeType
 
 internal abstract class JsRuntimeChalBaseJCP: JsChallengeProvider() {
     private val tag = JsRuntimeChalBaseJCP::class.simpleName
-    private val cacheSection = "challenge-solver"
+    protected val cacheSection = "challenge-solver"
 
     private val jcpGuideUrl = "https://github.com/yt-dlp/yt-dlp/wiki/YouTube-JS-Challenges"
     private val repository = "yt-dlp/ejs"
@@ -154,7 +154,8 @@ internal abstract class JsRuntimeChalBaseJCP: JsChallengeProvider() {
 
     private fun cachedSource(scriptType: ScriptType): Script? {
         val data = ie.cache.load(cacheSection, scriptType.value) ?: return null
-        return Script(scriptType, ScriptVariant.valueOf(data.variant), ScriptSource.CACHE, data.version, data.code)
+        return Script(scriptType,
+            ScriptVariant.valueOf(data.variant ?: "unknown"), ScriptSource.CACHE, data.version ?: "unknown", data.code)
     }
 
     private fun builtinSource(scriptType: ScriptType): Script? {

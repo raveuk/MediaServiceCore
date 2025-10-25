@@ -27,8 +27,6 @@ public abstract class VideoInfoServiceBase {
     private final DashInfoApi mDashInfoApi;
     private final FileApi mFileApi;
     protected final AppService mAppService;
-    // Make response smaller
-    private final String SMALL_RANGE = "&range=0-200";
 
     protected VideoInfoServiceBase() {
         mAppService = AppService.instance();
@@ -37,8 +35,8 @@ public abstract class VideoInfoServiceBase {
     }
 
     // Will be overridden in descendants
-    protected boolean isWebPotRequired() {
-        return false;
+    protected AppClient getClient() {
+        return null;
     }
 
     protected void transformFormats(VideoInfo videoInfo) {
@@ -55,7 +53,7 @@ public abstract class VideoInfoServiceBase {
     private void applySabrFixes(List<? extends VideoFormat> formats, String serverAbrStreamingUrl) {
         if (serverAbrStreamingUrl != null) {
             for (VideoFormat format : formats) {
-                if (!format.isEmpty()) {
+                if (!format.isBroken()) {
                     break;
                 }
                 format.setSabrUrl(serverAbrStreamingUrl);
@@ -87,9 +85,7 @@ public abstract class VideoInfoServiceBase {
         // What this for? Could this fix throttling or maybe the source error?
         //applyAdditionalStrings(formats);
 
-        if (isWebPotRequired()) {
-            applySessionPoToken(formats, PoTokenGate.getWebSessionPoToken());
-        }
+        applySessionPoToken(formats, PoTokenGate.getPoToken(getClient()));
     }
 
     private static List<String> extractSParams(List<? extends VideoFormat> formats) {

@@ -14,6 +14,7 @@ import retrofit2.Call;
 
 public class TrackingService {
     private static final String TAG = TrackingService.class.getSimpleName();
+    private static final int THRESHOLD_SEC = 3 * 60;
     private static TrackingService sInstance;
     private final TrackingApi mTrackingApi;
     private Pair<String, Float> mPosition;
@@ -53,23 +54,25 @@ public class TrackingService {
     private void updateWatchTimeFull(String videoId, float lengthSec, float oldPositionSec, float positionSec, String clientPlaybackNonce,
                                  String eventId, String visitorMonitoringData, String ofParam) {
         // Mark video as full watched if less than couple minutes remains
-        boolean isVideoAlmostWatched = lengthSec - positionSec < 3 * 60;
+        boolean isVideoAlmostWatched = lengthSec - positionSec < THRESHOLD_SEC;
+        boolean previouslyAlmostWatched = previouslyAlmostWatched(videoId, lengthSec);
 
-        if (isVideoAlmostWatched) {
-            positionSec = lengthSec;
+        if (isVideoAlmostWatched && previouslyAlmostWatched) {
+            return;
         }
 
-        //if (isVideoAlmostWatched) {
-        //    if (needNewRecord(videoId)) {
-        //        createWatchRecordShort(videoId, clientPlaybackNonce, eventId, visitorMonitoringData, ofParam);
-        //    }
-        //    updateWatchTimeShort(videoId, lengthSec, lengthSec, lengthSec, clientPlaybackNonce, eventId, visitorMonitoringData, ofParam);
-        //    return;
-        //}
+        if (isVideoAlmostWatched) {
+            if (needNewRecord(videoId)) {
+                createWatchRecordShort(videoId, clientPlaybackNonce, eventId, visitorMonitoringData, ofParam);
+            }
+            updateWatchTimeShort(videoId, lengthSec, lengthSec, lengthSec, clientPlaybackNonce, eventId, visitorMonitoringData, ofParam);
+            return;
+        }
 
         if (needNewRecord(videoId)) {
             createWatchRecordLong(videoId, lengthSec, oldPositionSec, clientPlaybackNonce, eventId, visitorMonitoringData, ofParam);
         }
+
         updateWatchTimeLong(videoId, lengthSec, oldPositionSec, positionSec, clientPlaybackNonce, eventId, visitorMonitoringData, ofParam);
     }
 
@@ -139,10 +142,18 @@ public class TrackingService {
     }
 
     private boolean needNewRecord(String videoId) {
-        return mPosition == null || !Helpers.equals(mPosition.first, videoId);
+        return !isSameVideo(videoId);
     }
 
     private float getOldPositionSec(String videoId, float positionSec) {
-        return mPosition != null && Helpers.equals(mPosition.first, videoId) ? mPosition.second : positionSec < 3 * 60 ? 0 : positionSec;
+        return isSameVideo(videoId) ? mPosition.second : positionSec < THRESHOLD_SEC ? 0 : positionSec;
+    }
+
+    private boolean previouslyAlmostWatched(String videoId, float lengthSec) {
+        return isSameVideo(videoId) && lengthSec - mPosition.second < THRESHOLD_SEC;
+    }
+
+    private boolean isSameVideo(String videoId) {
+        return mPosition != null && Helpers.equals(mPosition.first, videoId);
     }
 }
