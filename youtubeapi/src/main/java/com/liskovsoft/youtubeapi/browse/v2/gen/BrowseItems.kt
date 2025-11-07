@@ -5,7 +5,7 @@ import com.liskovsoft.youtubeapi.next.v2.gen.ContinuationItem
 import com.liskovsoft.youtubeapi.next.v2.gen.ShelfRenderer
 
 internal data class SectionWrapper(
-    val itemSectionRenderer: ItemSectionRenderer?,
+    val itemSectionRenderer: ShelfListWrapper?,
     val richItemRenderer: RichItemRenderer?,
     val richSectionRenderer: RichSectionRenderer?,
     val continuationItemRenderer: ContinuationItemRenderer?,
@@ -27,29 +27,30 @@ internal data class TabRenderer(
         val sectionListRenderer: SectionListRenderer?,
         val richGridRenderer: RichGridRenderer?,
         val tvSurfaceContentRenderer: TvSurfaceContentRenderer?
-    ) {
-        data class SectionListRenderer(
-            val contents: List<SectionWrapper?>?
-        )
-        data class RichGridRenderer(
-            val contents: List<SectionWrapper?>?,
-            val header: Header?
-        ) {
-            data class Header(
-                val feedFilterChipBarRenderer: FeedFilterChipBarRenderer?
-            ) {
-                data class FeedFilterChipBarRenderer(
-                    val contents: List<Content?>?
-                ) {
-                    data class Content(
-                        val chipCloudChipRenderer: ChipCloudChipRenderer?
-                    )
-                }
-            }
-        }
-    }
+    )
     data class PresentationStyle(
         val style: String?
+    )
+}
+
+internal data class SectionListRenderer(
+    val contents: List<SectionWrapper?>?
+)
+
+internal data class RichGridRenderer(
+    val contents: List<SectionWrapper?>?,
+    val header: Header?
+) {
+    data class Header(
+        val feedFilterChipBarRenderer: FeedFilterChipBarRenderer?
+    )
+}
+
+internal data class FeedFilterChipBarRenderer(
+    val contents: List<Content?>?
+) {
+    data class Content(
+        val chipCloudChipRenderer: ChipCloudChipRenderer?
     )
 }
 
@@ -77,7 +78,7 @@ internal data class TvSurfaceContentRenderer(
     val continuation: ContinuationItem?
 ) {
     data class Content(
-        val sectionListRenderer: ItemSectionRenderer?,
+        val sectionListRenderer: ShelfListWrapper?,
         val gridRenderer: GridRenderer?, // TV
         val twoColumnRenderer: TwoColumnRenderer? // TV
     )
@@ -112,7 +113,7 @@ internal data class TvSecondaryNavRenderer(
 }
 
 // Subscriptions, Sports
-internal data class ItemSectionRenderer(
+internal data class ShelfListWrapper(
     val contents: List<Shelf?>?,
     val continuations: List<ContinuationItem?>?
 )

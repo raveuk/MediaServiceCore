@@ -37,9 +37,11 @@ public class VideoInfoService extends VideoInfoServiceBase {
     // VIDEO_INFO_MWEB - can bypass SABR-only responses
     private final static AppClient[] VIDEO_INFO_TYPE_LIST = {
             AppClient.WEB_EMBED,
+            AppClient.ANDROID_SDK_LESS, // doesn't require pot
             AppClient.ANDROID_REEL, // doesn't require pot and cipher
             AppClient.IOS,
             AppClient.TV,
+            AppClient.TV_DOWNGRADED,
             AppClient.TV_EMBED, // single audio language
             AppClient.MWEB, // single audio language
     };
@@ -209,7 +211,7 @@ public class VideoInfoService extends VideoInfoServiceBase {
         boolean skipAuth = !client.isAuthSupported() || mSkipAuthBlock;
         mRecentInfoType = client;
 
-        if (client.isReelPlayer()) {
+        if (client.isReelClient()) {
             Call<VideoInfoReel> wrapper = mVideoInfoApi.getVideoInfoReel(videoInfoQuery, mAppService.getVisitorData(), client.getUserAgent());
             return getVideoInfoReel(wrapper, skipAuth);
         }
@@ -310,6 +312,7 @@ public class VideoInfoService extends VideoInfoServiceBase {
                     () -> getVideoInfo(AppClient.WEB_EMBED, videoId, clickTrackingParams), // Restricted (18+) videos
                     () -> getVideoInfo(AppClient.ANDROID_REEL, videoId, clickTrackingParams), // Fixes "bot check error" bug?
                     () -> getVideoInfo(AppClient.WEB_SAFARI, videoId, clickTrackingParams), // Fixes "bot check error" bug?
+                    () -> getVideoInfo(AppClient.TV_DOWNGRADED, videoId, clickTrackingParams), // Fixes "bot check error" bug?
                     () -> getVideoInfo(AppClient.TV_SIMPLY, videoId, clickTrackingParams), // Fixes "bot check error" bug?
                     () -> getVideoInfo(AppClient.TV, videoId, clickTrackingParams), // Supports auth. Fixes "please sign in" bug!
                     () -> getVideoInfoGeo(AppClient.WEB, videoId, clickTrackingParams) // Video clip blocked in current location

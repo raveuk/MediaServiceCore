@@ -2,12 +2,9 @@ package com.liskovsoft.googlecommon.common.helpers
 
 import com.google.net.cronet.okhttptransport.CronetInterceptor
 import com.liskovsoft.sharedutils.cronet.CronetManager
-import com.liskovsoft.sharedutils.helpers.Helpers
 import com.liskovsoft.sharedutils.okhttp.OkHttpManager
-import com.liskovsoft.sharedutils.prefs.GlobalPreferences
-import com.liskovsoft.youtubeapi.app.AppService
 import com.liskovsoft.youtubeapi.common.helpers.AppConstants
-import com.liskovsoft.youtubeapi.search.SearchApi
+import com.liskovsoft.youtubeapi.app.AppService
 import okhttp3.Headers
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
@@ -18,9 +15,6 @@ internal object RetrofitOkHttpHelper {
 
     @JvmStatic
     val authHeaders = mutableMapOf<String, String>()
-
-    @JvmStatic
-    val authHeaders2 = mutableMapOf<String, String>()
 
     @JvmStatic
     val client: OkHttpClient by lazy { createClient() }
@@ -58,15 +52,19 @@ internal object RetrofitOkHttpHelper {
             "https://clients1.google.com/complete/",
         )
 
-    private val tParamSuffixes = listOf("/browse", "/next", "/reel", "/playlist")
+    /**
+     * NOTE: visitor header could broke many apis. E.g. VisitorService
+     */
+    private val visitorApiSuffixes = arrayOf(
+        "/youtubei/v1/browse",
+        "/youtubei/v1/search",
+        "/youtubei/v1/player",
+        "/youtubei/v1/reel/",
+        "/youtubei/v1/next",
+        "/api/stats/",
+    )
 
-    //private fun createClient(): OkHttpClient {
-    //    val builder = OkHttpClient.Builder()
-    //    addCommonHeaders(builder)
-    //    OkHttpCommons.setupBuilder(builder)
-    //    //addCronetInterceptor(builder)
-    //    return builder.build()
-    //}
+    private val tParamSuffixes = listOf("/browse", "/next", "/reel", "/playlist")
 
     private fun createClient(): OkHttpClient {
         val builder = OkHttpManager.instance().client.newBuilder()
@@ -85,16 +83,12 @@ internal object RetrofitOkHttpHelper {
 
             val url = request.url.toString()
 
-            if (Helpers.startsWithAny(url, *apiPrefixes)) {
+            if (apiPrefixes.any { url.startsWith(it) }) {
                 val doSkipAuth = authSkipList.remove(request)
 
                 // Empty Home fix (anonymous user) and improve Recommendations for everyone
-                headers["X-Goog-Visitor-Id"] ?: AppService.instance().visitorData?.let { requestBuilder.header("X-Goog-Visitor-Id", it) }
-
-                if (doSkipAuth) {
-                    // visitor generation fix
-                    requestBuilder.removeHeader("X-Goog-Visitor-Id")
-                }
+                if (visitorApiSuffixes.any { url.contains(it) })
+                    headers["X-Goog-Visitor-Id"] ?: AppService.instance().visitorData?.let { requestBuilder.header("X-Goog-Visitor-Id", it) }
 
                 applyHeaders(this.apiHeaders, headers, requestBuilder)
 
@@ -108,12 +102,7 @@ internal object RetrofitOkHttpHelper {
                     )
                 } else {
                     applyQueryKeys(mapOf("prettyPrint" to "false", "t" to tParam), request, requestBuilder)
-                    // Fix suggestions on non branded accounts
-                    if (url.startsWith(SearchApi.TAGS_URL) && authHeaders2.isNotEmpty()) {
-                        applyHeaders(authHeaders2, headers, requestBuilder)
-                    } else {
-                        applyHeaders(authHeaders, headers, requestBuilder)
-                    }
+                    applyHeaders(authHeaders, headers, requestBuilder)
                 }
             }
 

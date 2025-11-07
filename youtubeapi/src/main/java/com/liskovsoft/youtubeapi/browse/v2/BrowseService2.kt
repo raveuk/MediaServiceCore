@@ -10,7 +10,7 @@ import com.liskovsoft.youtubeapi.common.helpers.PostDataHelper
 import com.liskovsoft.youtubeapi.common.models.gen.ItemWrapper
 import com.liskovsoft.youtubeapi.common.models.impl.mediaitem.ShortsMediaItem
 import com.liskovsoft.youtubeapi.next.v2.gen.getItems
-import com.liskovsoft.youtubeapi.next.v2.gen.getNextPageKey
+import com.liskovsoft.youtubeapi.next.v2.gen.getContinuationToken
 import com.liskovsoft.youtubeapi.next.v2.gen.getShelves
 
 internal open class BrowseService2 {
@@ -146,7 +146,7 @@ internal open class BrowseService2 {
         val firstResult = mBrowseApi.getReelResult(BrowseApiHelper.getReelQuery())
 
         return RetrofitHelper.get(firstResult, skipAuth) ?.let { firstItem ->
-            val result = continueShortsWeb(firstItem.getContinuationKey(), skipAuth)
+            val result = continueShortsWeb(firstItem.getContinuationToken(), skipAuth)
             result?.mediaItems?.add(0, ShortsMediaItem(null, firstItem))
 
             if (!skipAuth)
@@ -238,7 +238,7 @@ internal open class BrowseService2 {
                 }
             }
 
-            ShortsMediaGroup(result, it.getContinuationKey(), MediaGroupOptions.create(MediaGroup.TYPE_SHORTS))
+            ShortsMediaGroup(result, it.getContinuationToken(), MediaGroupOptions.create(MediaGroup.TYPE_SHORTS))
         }
     }
 
@@ -351,7 +351,7 @@ internal open class BrowseService2 {
 
         shortTab?.let { result.add(it) } // move Shorts tab lower
 
-        homeResult?.let { it.getShelves()?.forEach {
+        homeResult?.let { it.getNestedShelves()?.forEach {
             val title = it?.getTitle()
             if (it != null && result.firstOrNull { it.title == title } == null) // only unique rows
                 result.add(ItemSectionMediaGroup(it, if (title == null) uploadOptions else channelOptions)) } } // playlists don't have a title
@@ -427,7 +427,7 @@ internal open class BrowseService2 {
         return RetrofitHelper.get(continuationResult)?.let {
             val result = mutableListOf<MediaGroup?>()
             it.getShelves()?.forEach { if (it != null) addOrMerge(result, ShelfSectionMediaGroup(it, options)) }
-            Pair(result, it.getNextPageKey())
+            Pair(result, it.getContinuationToken())
         }
     }
 
@@ -476,7 +476,7 @@ internal open class BrowseService2 {
 
         return RetrofitHelper.get(continuationResult)?.let {
             // Prepare to move LIVE items to the top. Multiple results should be combined first.
-            val (overrideItems, overrideKey) = if (continueIfNeeded) continueIfNeededTV(it.getItems(), it.getNextPageKey(), options) else Pair(null, null)
+            val (overrideItems, overrideKey) = if (continueIfNeeded) continueIfNeededTV(it.getItems(), it.getContinuationToken(), options) else Pair(null, null)
 
             WatchNexContinuationMediaGroup(it, options, overrideItems = overrideItems, overrideKey = overrideKey).apply { title = group.title }
         }
@@ -576,8 +576,7 @@ internal open class BrowseService2 {
 
             RetrofitHelper.get(result)?.let {
                 combinedItems = (combinedItems ?: emptyList()) + (it.getItems() ?: emptyList())
-                //combinedItems = (combinedItems.orEmpty() + it.getItems().orEmpty()).distinct() // remove duplicates
-                combinedKey = it.getNextPageKey()
+                combinedKey = it.getContinuationToken()
             }
         }
 

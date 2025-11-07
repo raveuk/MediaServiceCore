@@ -2,6 +2,8 @@ package com.liskovsoft.youtubeapi.app.nsigsolver.impl
 
 import com.eclipsesource.v8.V8
 import com.eclipsesource.v8.V8ScriptExecutionException
+import com.liskovsoft.sharedutils.helpers.DeviceHelpers
+import com.liskovsoft.sharedutils.rx.RxHelper
 import com.liskovsoft.youtubeapi.app.nsigsolver.common.loadScript
 import com.liskovsoft.youtubeapi.app.nsigsolver.common.withLock
 import com.liskovsoft.youtubeapi.app.nsigsolver.provider.JsChallengeProviderError
@@ -10,12 +12,16 @@ import com.liskovsoft.youtubeapi.app.nsigsolver.runtime.Script
 import com.liskovsoft.youtubeapi.app.nsigsolver.runtime.ScriptSource
 import com.liskovsoft.youtubeapi.app.nsigsolver.runtime.ScriptType
 import com.liskovsoft.youtubeapi.app.nsigsolver.runtime.ScriptVariant
+import io.reactivex.disposables.Disposable
 
 internal object V8ChallengeProvider: JsRuntimeChalBaseJCP() {
     private val tag = V8ChallengeProvider::class.simpleName
-    private val v8NpmLibFilename = listOf("${libPrefix}polyfill.js", "${libPrefix}meriyah.bundle.min.js", "${libPrefix}astring.bundle.min.js")
+    private val v8NpmLibFilename = listOf("${libPrefix}polyfill.js", "${libPrefix}meriyah-6.1.4.min.js", "${libPrefix}astring-1.9.0.min.js")
     private var v8Runtime: V8? = null
     private val v8Lock = Any()
+    private var shutdownAction: Disposable? = null
+    private const val SMALL_HEAP_THRESHOLD_MB = 380
+    private val isSmallHeap by lazy { DeviceHelpers.getMaxHeapMemoryMB() < SMALL_HEAP_THRESHOLD_MB }
 
     override fun iterScriptSources(): Sequence<Pair<ScriptSource, (ScriptType) -> Script?>> = sequence {
         for ((source, func) in super.iterScriptSources()) {
@@ -36,7 +42,11 @@ internal object V8ChallengeProvider: JsRuntimeChalBaseJCP() {
     override fun runJsRuntime(stdin: String): String {
         warmup()
 
-        return runV8(stdin)
+        val result = runV8(stdin)
+
+        shutdownIfNeeded()
+
+        return result
     }
 
     private fun runV8(stdin: String): String {
@@ -78,5 +88,12 @@ internal object V8ChallengeProvider: JsRuntimeChalBaseJCP() {
     fun forceRecreate() {
         shutdown()
         warmup()
+    }
+
+    private fun shutdownIfNeeded() {
+        if (isSmallHeap) {
+            RxHelper.disposeActions(shutdownAction)
+            shutdownAction = RxHelper.runAsync(::shutdown, 10_000)
+        }
     }
 }

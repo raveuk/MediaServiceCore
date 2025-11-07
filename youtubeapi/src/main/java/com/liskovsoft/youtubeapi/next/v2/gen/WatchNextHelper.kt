@@ -1,6 +1,5 @@
 package com.liskovsoft.youtubeapi.next.v2.gen
 
-import com.liskovsoft.youtubeapi.browse.v2.gen.GridRenderer
 import com.liskovsoft.youtubeapi.browse.v2.gen.PlaylistVideoListRenderer
 import com.liskovsoft.youtubeapi.browse.v2.gen.Shelf
 import com.liskovsoft.youtubeapi.browse.v2.gen.getItems
@@ -56,18 +55,31 @@ internal fun WatchNextResult.getDescriptionPanel() = engagementPanels?.firstOrNu
 internal fun WatchNextResult.isEmpty(): Boolean = getSuggestedSections()?.isEmpty() ?: true
 private fun WatchNextResult.getAutoplaySet() = getWatchNextResults()?.autoplay?.autoplay?.sets?.getOrNull(0)
 
+///////
+
 internal fun WatchNextResultContinuation.isEmpty(): Boolean = getItems() == null
-internal fun WatchNextResultContinuation.getItems(): List<ItemWrapper?>? = getContinuation()?.let { it.items ?: it.contents } ?:
-    getSectionContinuation()?.contents?.flatMap { it?.getItems() ?: emptyList() }
-internal fun WatchNextResultContinuation.getNextPageKey(): String? = getContinuation()?.continuations?.getContinuationKey() ?:
-    getSectionContinuation()?.continuations?.getContinuationKey()
-internal fun WatchNextResultContinuation.getShelves(): List<Shelf?>? = getSectionContinuation()?.contents
-private fun WatchNextResultContinuation.getContinuation() = continuationContents?.horizontalListContinuation
+internal fun WatchNextResultContinuation.getItems(): List<ItemWrapper?>? = getGridContinuation()?.getItems()
+    ?: getSectionContinuation()?.getItems()
+internal fun WatchNextResultContinuation.getContinuationToken(): String? = getGridContinuation()?.getContinuationToken()
+    ?: getSectionContinuation()?.getContinuationToken()
+internal fun WatchNextResultContinuation.getShelves(): List<Shelf?>? = getSectionContinuation()?.getShelves()
+private fun WatchNextResultContinuation.getGridContinuation() = continuationContents?.horizontalListContinuation
     ?: continuationContents?.gridContinuation
     ?: continuationContents?.playlistVideoListContinuation
     ?: continuationContents?.tvSurfaceContentContinuation?.content?.gridRenderer
 private fun WatchNextResultContinuation.getSectionContinuation() = continuationContents?.sectionListContinuation
     ?: continuationContents?.tvSurfaceContentContinuation?.content?.sectionListRenderer
+
+///////
+
+internal fun SectionListContinuation.getItems(): List<ItemWrapper?>? = getShelves()?.flatMap { it?.getItems() ?: emptyList() }
+internal fun SectionListContinuation.getContinuationToken(): String? = continuations?.getContinuationToken()
+internal fun SectionListContinuation.getShelves(): List<Shelf?>? = contents
+
+///////
+
+internal fun GridContinuationWrapper.getItems(): List<ItemWrapper?>? = items ?: contents
+internal fun GridContinuationWrapper.getContinuationToken(): String? = continuations?.getContinuationToken()
 
 ///////
 
@@ -112,18 +124,14 @@ private fun ButtonStateItem.getButton(type: String) = buttons?.firstOrNull { it?
 internal fun ShelfRenderer.getTitle() = title?.getText() ?: getShelf()?.title?.getText() ?: getShelf()?.avatarLockup?.avatarLockupRenderer?.title?.getText()
 internal fun ShelfRenderer.getItemWrappers() =
     content?.let { it.horizontalListRenderer?.items ?: it.expandedShelfContentsRenderer?.items ?: it.gridRenderer?.items }
-internal fun ShelfRenderer.getNextPageKey() = content?.horizontalListRenderer?.continuations?.getContinuationKey()
+internal fun ShelfRenderer.getContinuationToken() = content?.horizontalListRenderer?.continuations?.getContinuationToken()
 internal fun ShelfRenderer.getChipItems() = headerRenderer?.chipCloudRenderer?.chips
 internal fun ShelfRenderer.containsShorts() = tvhtml5ShelfRendererType == TVHTML5_SHELF_RENDERER_TYPE_SHORTS
 private fun ShelfRenderer.getShelf() = headerRenderer?.shelfHeaderRenderer
 
 ///////
 
-internal fun GridRenderer.getNextPageKey() = continuations?.firstOrNull()?.getContinuationKey() ?: items?.lastOrNull()?.getContinuationToken()
-
-///////
-
-internal fun PlaylistVideoListRenderer.getNextPageKey() = continuations?.firstOrNull()?.getContinuationKey() ?: contents?.lastOrNull()?.getContinuationToken()
+internal fun PlaylistVideoListRenderer.getContinuationToken() = continuations?.firstOrNull()?.getContinuationToken() ?: contents?.lastOrNull()?.getContinuationToken()
 
 ////////
 
@@ -172,18 +180,17 @@ internal fun Marker.getThumbnailUrl(): String? = thumbnailDetails?.getOptimalRes
 
 ///////
 
-internal fun ContinuationItem.getContinuationKey(): String? =
+internal fun ContinuationItem.getContinuationToken(): String? =
     nextContinuationData?.continuation ?: nextRadioContinuationData?.continuation ?: reloadContinuationData?.continuation
 internal fun ContinuationItem.getLabel(): String? = nextContinuationData?.label?.getText()
 
-//internal fun List<ContinuationItem?>.getContinuationKey(): String? = firstOrNull()?.getContinuationKey()
-internal fun List<ContinuationItem?>.getContinuationKey(): String? = firstNotNullOfOrNull { it?.getContinuationKey() }
+internal fun List<ContinuationItem?>.getContinuationToken(): String? = firstNotNullOfOrNull { it?.getContinuationToken() }
 
 ///////
 
-internal fun EngagementPanel.getTopCommentsToken(): String? = getSubMenuItems()?.getOrNull(0)?.continuation?.getContinuationKey() ?:
-    getSections()?.firstNotNullOfOrNull { it?.itemSectionRenderer?.continuations?.getContinuationKey() }
-internal fun EngagementPanel.getNewCommentsToken(): String? = getSubMenuItems()?.getOrNull(1)?.continuation?.getContinuationKey()
+internal fun EngagementPanel.getTopCommentsToken(): String? = getSubMenuItems()?.getOrNull(0)?.continuation?.getContinuationToken() ?:
+    getSections()?.firstNotNullOfOrNull { it?.itemSectionRenderer?.continuations?.getContinuationToken() }
+internal fun EngagementPanel.getNewCommentsToken(): String? = getSubMenuItems()?.getOrNull(1)?.continuation?.getContinuationToken()
 internal fun EngagementPanel.isCommentsSection(): Boolean = engagementPanelSectionListRenderer?.panelIdentifier == "comment-item-section"
 internal fun EngagementPanel.isDescriptionSection(): Boolean = engagementPanelSectionListRenderer?.panelIdentifier == "video-description-ep-identifier"
 internal fun EngagementPanel.getTitle(): String? = getDescriptionHeader()?.title?.getText()

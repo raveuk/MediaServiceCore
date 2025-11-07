@@ -12,7 +12,7 @@ import com.liskovsoft.youtubeapi.common.models.impl.mediaitem.NotificationMediaI
 import com.liskovsoft.youtubeapi.common.models.impl.mediaitem.TabMediaItem
 import com.liskovsoft.youtubeapi.next.v2.gen.WatchNextResultContinuation
 import com.liskovsoft.youtubeapi.next.v2.gen.getItems
-import com.liskovsoft.youtubeapi.next.v2.gen.getNextPageKey
+import com.liskovsoft.youtubeapi.next.v2.gen.getContinuationToken
 import com.liskovsoft.youtubeapi.next.v2.gen.getShelves
 import com.liskovsoft.youtubeapi.notifications.gen.NotificationsResult
 import com.liskovsoft.youtubeapi.notifications.gen.getItems
@@ -34,13 +34,11 @@ internal data class BrowseMediaGroup(
 internal data class BrowseMediaGroupTV(
     private val browseResult: BrowseResultTV,
     private val options: MediaGroupOptions,
-    private val liveResult: BrowseResult? = null,
     private val overrideItems: List<ItemWrapper?>? = null,
     private val overrideKey: String? = null
 ): BaseMediaGroup(options) {
-    override fun getItemWrappersInt(): List<ItemWrapper?> =
-        overrideItems?.sortedByDescending { it?.isLive() ?: false }
-            ?: listOfNotNull(liveResult?.getLiveItems(), browseResult.getItems()).flatten()
+    override fun getItemWrappersInt(): List<ItemWrapper?>? =
+        overrideItems?.sortedByDescending { it?.isLive() ?: false } ?: browseResult.getItems()
     override fun getNextPageKeyInt(): String? = if (overrideItems != null) overrideKey else browseResult.getContinuationToken()
     override fun getTitleInt(): String? = null
 }
@@ -70,7 +68,7 @@ internal data class WatchNexContinuationMediaGroup(
     private val overrideKey: String? = null
 ): BaseMediaGroup(options) {
     override fun getItemWrappersInt(): List<ItemWrapper?>? = overrideItems?.sortedByDescending { it?.isLive() ?: false } ?: continuation.getItems() ?: getLastShelf()?.getItems()
-    override fun getNextPageKeyInt(): String? = if (overrideItems != null) overrideKey else continuation.getNextPageKey() ?: getLastShelf()?.getNextPageKey()
+    override fun getNextPageKeyInt(): String? = if (overrideItems != null) overrideKey else continuation.getContinuationToken() ?: getLastShelf()?.getContinuationToken()
     override fun getTitleInt(): String? = null
     private fun getLastShelf() = continuation.getShelves()?.lastOrNull() // Get main content of Channels section and skip SHORTS
 }
@@ -89,12 +87,12 @@ internal data class ShelfSectionMediaGroup(
     private val options: MediaGroupOptions
 ): BaseMediaGroup(options) {
     override fun getItemWrappersInt(): List<ItemWrapper?>? = shelf.getItems()
-    override fun getNextPageKeyInt(): String? = shelf.getNextPageKey()
+    override fun getNextPageKeyInt(): String? = shelf.getContinuationToken()
     override fun getTitleInt(): String? = shelf.getTitle()
 }
 
 internal data class ItemSectionMediaGroup(
-    private val itemSectionRenderer: ItemSectionRenderer,
+    private val itemSectionRenderer: ShelfListWrapper,
     private val options: MediaGroupOptions
 ): BaseMediaGroup(options) {
     // Fix row continuation (no next key but has channel) by reporting empty content (will be continued as a chip). Example https://www.youtube.com/@hdtvtest
