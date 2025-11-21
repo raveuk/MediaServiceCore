@@ -6,6 +6,7 @@ import com.liskovsoft.sharedutils.querystringparser.UrlQueryStringFactory;
 import com.liskovsoft.googlecommon.common.converters.jsonpath.JsonPath;
 import com.liskovsoft.googlecommon.common.helpers.ServiceHelper;
 import com.liskovsoft.googlecommon.common.models.V2.TextItem;
+import com.liskovsoft.youtubeapi.common.helpers.AppClient;
 import com.liskovsoft.youtubeapi.videoinfo.models.formats.AdaptiveVideoFormat;
 import com.liskovsoft.youtubeapi.videoinfo.models.formats.RegularVideoFormat;
 
@@ -94,6 +95,9 @@ public class VideoInfo {
     @JsonPath("$.streamingData.serverAbrStreamingUrl")
     private String mServerAbrStreamingUrl; // SABR format url
 
+    @JsonPath("$.playerConfig.mediaCommonConfig.mediaUstreamerRequestConfig.videoPlaybackUstreamerConfig")
+    private String mVideoPlaybackUstreamerConfig; // SABR config
+
     // Values used in tracking actions
     private String mEventId;
     private String mVisitorMonitoringData;
@@ -104,7 +108,10 @@ public class VideoInfo {
     private int mSegmentDurationUs;
     private boolean mIsStreamSeekable;
     private List<CaptionTrack> mMergedCaptionTracks;
-    private boolean mIsAnonymous;
+    private boolean mIsAuth;
+    private String mPoToken;
+    private AppClient mClient;
+    private VideoUrlHolder mUrlHolder;
 
     public List<AdaptiveVideoFormat> getAdaptiveFormats() {
         return mAdaptiveFormats;
@@ -341,7 +348,11 @@ public class VideoInfo {
     }
 
     public String getServerAbrStreamingUrl() {
-        return mServerAbrStreamingUrl;
+        return getUrlHolder().getUrl();
+    }
+
+    public String getVideoPlaybackUstreamerConfig() {
+        return mVideoPlaybackUstreamerConfig;
     }
 
     /**
@@ -358,12 +369,12 @@ public class VideoInfo {
         mIsStreamSeekable = dashInfo.isSeekable();
     }
 
-    public void setAnonymous(boolean isAnonymous) {
-        mIsAnonymous = isAnonymous;
+    public void setAuth(boolean auth) {
+        mIsAuth = auth;
     }
 
-    public boolean isAnonymous() {
-        return mIsAnonymous;
+    public boolean isAuth() {
+        return mIsAuth;
     }
 
     private void parseTrackingParams() {
@@ -412,9 +423,10 @@ public class VideoInfo {
     }
 
     /**
-     * TODO: to be removed. Temp SABR fix
+     * TODO: remove when SABR parser will be fixed
      */
     private boolean isAdaptiveFormatsBroken() {
+        // TODO: remove when SABR parser will be fixed
         if (mAdaptiveFormats == null || mAdaptiveFormats.isEmpty()) {
             return false;
         }
@@ -429,5 +441,29 @@ public class VideoInfo {
         }
 
         return allBroken;
+    }
+
+    public String getPoToken() {
+        return mPoToken;
+    }
+
+    public void setPoToken(String poToken) {
+        mPoToken = poToken;
+    }
+
+    public AppClient getClient() {
+        return mClient;
+    }
+
+    public void setClient(AppClient client) {
+        mClient = client;
+    }
+
+    public VideoUrlHolder getUrlHolder() {
+        if (mUrlHolder == null) {
+            mUrlHolder = new VideoUrlHolder(mServerAbrStreamingUrl, null, null);
+        }
+
+        return mUrlHolder;
     }
 }

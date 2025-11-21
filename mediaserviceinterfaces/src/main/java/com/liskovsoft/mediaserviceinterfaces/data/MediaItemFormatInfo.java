@@ -57,4 +57,13 @@ public interface MediaItemFormatInfo {
      */
     int getSegmentDurationUs();
     String getPaidContentText();
+    String getVideoPlaybackUstreamerConfig();
+    String getServerAbrStreamingUrl();
+    String getPoToken();
+    ClientInfo getClientInfo();
+
+    interface ClientInfo {
+        String getClientName();
+        String getClientVersion();
+    }
 }
