@@ -183,13 +183,7 @@ internal data class VideoMetadataRenderer(
 
     data class LikeButton(
             val likeButtonRenderer: LikeButtonRenderer?
-    ) {
-        data class LikeButtonRenderer(
-                val likeStatus: String?,
-                val likeCount: Int?,
-                val likeCountText: TextItem?
-        )
-    }
+    )
 
     data class Badge(
             val upcomingEventBadge: UpcomingEventBadge?
@@ -199,6 +193,12 @@ internal data class VideoMetadataRenderer(
         )
     }
 }
+
+internal data class LikeButtonRenderer(
+    val likeStatus: String?,
+    val likeCount: Int?,
+    val likeCountText: TextItem?
+)
 
 internal data class ButtonStateItem(
     val subscribeButton: SubscribeButton?,
@@ -246,16 +246,13 @@ internal data class EngagementPanel(
     data class EngagementPanelSectionListRenderer(
         val panelIdentifier: String?,
         val header: Header?,
-        val content: Content?
+        val content: Content?,
+        val identifier: Identifier?
     ) {
         data class Header(
-            val engagementPanelTitleHeaderRenderer: EngagementPanelTitleHeaderRenderer?
-        ) {
-            data class EngagementPanelTitleHeaderRenderer(
-                val menu: Menu?,
-                val title: TextItem?
-            )
-        }
+            val engagementPanelTitleHeaderRenderer: EngagementPanelTitleHeaderRenderer?,
+            val overlayPanelHeaderRenderer: OverlayPanelHeaderRenderer?
+        )
         data class Content(
             val structuredDescriptionContentRenderer: StructuredDescriptionContentRenderer?,
             val macroMarkersListRenderer: MacroMarkersListRenderer?,
@@ -276,6 +273,9 @@ internal data class EngagementPanel(
                 val contents: List<SectionWrapper?>?
             )
         }
+        data class Identifier(
+            val tag: String?
+        )
     }
 }
 
