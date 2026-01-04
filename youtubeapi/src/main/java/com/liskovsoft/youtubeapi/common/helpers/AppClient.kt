@@ -73,6 +73,8 @@ enum class AppClient(
 
     override fun getClientName() = clientName
     override fun getClientVersion() = clientVersion
+    override fun getOsName() = "Macintosh" // TODO: change later
+    override fun getOsVersion() = "10_15_7" // TODO: change later
 
     private val browserInfo by lazy { if (isWebClient) extractBrowserInfo(userAgent) else null }
     private val postDataBrowser by lazy { if (browserName != null && browserVersion != null) String.format(POST_DATA_BROWSER, browserName, browserVersion) else null }
@@ -114,5 +116,9 @@ enum class AppClient(
         }
 
         return null
+    }
+
+    companion object {
+        fun hasName(name: String): Boolean = values().any { it.name == name }
     }
 }

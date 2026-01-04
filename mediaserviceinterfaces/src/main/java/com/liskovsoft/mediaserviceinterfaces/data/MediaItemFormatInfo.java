@@ -5,7 +5,7 @@ import io.reactivex.Observable;
 import java.io.InputStream;
 import java.util.List;
 
-public interface MediaItemFormatInfo {
+public interface MediaItemFormatInfo extends FormatInfoProvision {
     List<MediaFormat> getAdaptiveFormats();
     List<MediaFormat> getUrlFormats();
     List<MediaSubtitle> getSubtitles();
@@ -35,7 +35,7 @@ public interface MediaItemFormatInfo {
     MediaItemStoryboard createStoryboard();
     boolean isUnplayable();
     boolean isUnknownError();
-    String getPlayabilityStatus();
+    String getPlayabilityReason();
     boolean isStreamSeekable();
     /**
      * Stream start time in UTC (!!!).<br/>
@@ -65,5 +65,7 @@ public interface MediaItemFormatInfo {
     interface ClientInfo {
         String getClientName();
         String getClientVersion();
+        String getOsName();
+        String getOsVersion();
     }
 }
