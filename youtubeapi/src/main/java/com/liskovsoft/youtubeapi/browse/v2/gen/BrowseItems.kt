@@ -42,17 +42,24 @@ internal data class RichGridRenderer(
     val header: Header?
 ) {
     data class Header(
-        val feedFilterChipBarRenderer: FeedFilterChipBarRenderer?
+        val feedFilterChipBarRenderer: FeedFilterChipBarRenderer?,
+        val chipBarViewModel: ChipBarViewModel?
     )
 }
 
 internal data class FeedFilterChipBarRenderer(
-    val contents: List<Content?>?
-) {
-    data class Content(
-        val chipCloudChipRenderer: ChipCloudChipRenderer?
-    )
-}
+    val contents: List<ChipItemWrapper?>?
+)
+
+internal data class ChipBarViewModel(
+    val chips: List<ChipItemWrapper?>?
+)
+
+internal data class ChipItemWrapper(
+    val chipCloudChipRenderer: ChipCloudChipRenderer?,
+    val chipViewModel: ChipViewModel?,
+    val listItemViewModel: ListItemViewModel?
+)
 
 // WhatToWatch only
 internal data class RichSectionRenderer(
@@ -134,7 +141,19 @@ internal data class ContinuationCommand(
 
 internal data class ChipCloudChipRenderer(
     val text: TextItem?,
+    val content: Content?,
     val navigationEndpoint: NavigationEndpoint? // possible duplicate?
+)
+
+internal data class ChipViewModel(
+    val text: String?,
+    val displayType: String?,
+    val tapCommand: OnTap?
+)
+
+internal data class ListItemViewModel(
+    val title: TextItem?,
+    val rendererContext: RendererContext?
 )
 
 internal data class NavigationEndpoint(
@@ -211,5 +230,25 @@ internal data class PlaylistVideoListRenderer(
 
 internal data class GridRenderer(
     val items: List<ItemWrapper?>?,
-    val continuations: List<ContinuationItem?>?
+    val continuations: List<ContinuationItem?>?,
+    val showMoreText: TextItem?,
+    val showFewerText: TextItem?
 )
+
+internal data class Content(
+    val horizontalListRenderer: HorizontalListRenderer?,
+    val sectionListRenderer: SectionListRenderer?
+) {
+    data class HorizontalListRenderer(
+        val items: List<ItemWrapper?>?,
+        val continuations: List<ContinuationItem?>?
+    )
+
+    data class SectionListRenderer(
+        val contents: List<Shelf?>?
+    ) {
+        data class Shelf(
+            val shelfRenderer: ShelfRenderer?
+        )
+    }
+}
